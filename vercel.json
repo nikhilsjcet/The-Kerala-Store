@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/extract-meesho",
+      "destination": "/api/extract-meesho.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+
