@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Order } from '../types';
 import { StoreService } from '../services/storeService';
+import { useAuth } from '../context/AuthContext';
 import { formatINR, formatDateTime, getCourierTrackingUrl } from '../lib/utils';
 import { 
   Package, 
@@ -14,7 +15,8 @@ import {
   ArrowLeft,
   Instagram,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
 
 interface OrdersPageProps {
@@ -23,6 +25,7 @@ interface OrdersPageProps {
 }
 
 export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder }) => {
+  const { user, openAuthModal } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchOrderNumber, setSearchOrderNumber] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -31,17 +34,32 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
 
   useEffect(() => {
     let isMounted = true;
-    StoreService.getOrders().then((data) => {
-      if (isMounted) {
-        setOrders(data);
-        if (recentOrder) {
-          setSelectedOrder(recentOrder);
+    setIsLoading(true);
+
+    if (user) {
+      StoreService.getCustomerOrders(user.id, user.email).then((data) => {
+        if (isMounted) {
+          setOrders(data);
+          if (recentOrder) {
+            setSelectedOrder(recentOrder);
+            setIsDetailsView(true);
+          }
+          setIsLoading(false);
         }
-        setIsLoading(false);
-      }
-    });
+      });
+    } else if (recentOrder) {
+      setOrders([recentOrder]);
+      setSelectedOrder(recentOrder);
+      setIsDetailsView(true);
+      setIsLoading(false);
+    } else {
+      // Unauthenticated customer: do NOT show other people's orders!
+      setOrders([]);
+      setIsLoading(false);
+    }
+
     return () => { isMounted = false; };
-  }, [recentOrder]);
+  }, [user, recentOrder]);
 
   const handleSearchOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,18 +213,42 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                 <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center text-gray-400 mx-auto">
                   <Package className="w-8 h-8" />
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-gray-900">No Orders Found</h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                    When you place an order on The Kerala Store, your products and live courier updates will appear here!
-                  </p>
+                {user ? (
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">No Orders Yet</h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      You haven't placed any orders with The Kerala Store yet. Start exploring our curated Kerala collection!
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">Sign In to View Your Orders</h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Sign in with your Google account to automatically track your deliveries and order history, or enter your Order ID above.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
+                  {!user && (
+                    <button
+                      onClick={openAuthModal}
+                      className="px-6 py-2.5 rounded-full bg-[#0A5C36] text-white font-bold text-xs shadow-sm hover:bg-[#064024] cursor-pointer"
+                    >
+                      Sign In with Google
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onNavigate('shop')}
+                    className={`px-6 py-2.5 rounded-full font-bold text-xs cursor-pointer ${
+                      user 
+                        ? 'bg-[#0A5C36] text-white shadow-sm hover:bg-[#064024]' 
+                        : 'bg-stone-100 text-stone-800 hover:bg-stone-200'
+                    }`}
+                  >
+                    Explore Products
+                  </button>
                 </div>
-                <button
-                  onClick={() => onNavigate('shop')}
-                  className="px-6 py-2.5 rounded-full bg-[#0A5C36] text-white font-bold text-xs shadow-sm hover:bg-[#064024] cursor-pointer"
-                >
-                  Explore Products
-                </button>
               </div>
             ) : (
               /* FLIPKART STYLE FRONT PAGE: ONLY PRODUCT & CURRENT DELIVERY UPDATE */

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { CartItem, Product, ProductVariant, DiscountCode } from '../types';
 import { StoreService } from '../services/storeService';
+import { useAuth } from './AuthContext';
 
 interface CartContextType {
   cart: CartItem[];
@@ -29,17 +30,30 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const STORAGE_KEY_CART = 'thekeralastore_cart_items';
-const STORAGE_KEY_WISHLIST = 'thekeralastore_wishlist_items';
 const FREE_SHIPPING_THRESHOLD = 999;
 const STANDARD_SHIPPING_FEE = 99;
 
+const getCartStorageKey = (userId?: string | null) => 
+  userId ? `thekeralastore_cart_user_${userId}` : 'thekeralastore_cart_guest';
+
+const getWishlistStorageKey = (userId?: string | null) => 
+  userId ? `thekeralastore_wishlist_user_${userId}` : 'thekeralastore_wishlist_guest';
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const currentUserIdRef = useRef<string | null>(user?.id || null);
+
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_CART);
-      return saved ? JSON.parse(saved) : [];
+      const key = getCartStorageKey(user?.id);
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed: CartItem[] = JSON.parse(saved);
+        // Sanitize: filter out any unlisted or draft products
+        return parsed.filter((it) => !it.product?.status || it.product.status === 'published');
+      }
+      return [];
     } catch {
       return [];
     }
@@ -48,7 +62,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [wishlist, setWishlist] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_WISHLIST);
+      const key = getWishlistStorageKey(user?.id);
+      const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -61,25 +76,80 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
   const [discountMessage, setDiscountMessage] = useState('');
 
-  // Persist cart
+  // Handle User change (Login, Logout, Account Switch) -> Isolate carts per account
+  useEffect(() => {
+    const prevUserId = currentUserIdRef.current;
+    const nextUserId = user?.id || null;
+
+    if (prevUserId !== nextUserId) {
+      currentUserIdRef.current = nextUserId;
+
+      // When switching accounts or logging out, clear previous cart from state
+      // and load the new user's isolated cart
+      const key = getCartStorageKey(nextUserId);
+      const savedCart = localStorage.getItem(key);
+      if (savedCart) {
+        try {
+          const parsed: CartItem[] = JSON.parse(savedCart);
+          setCart(parsed.filter((it) => !it.product?.status || it.product.status === 'published'));
+        } catch {
+          setCart([]);
+        }
+      } else {
+        setCart([]);
+      }
+
+      const wishlistKey = getWishlistStorageKey(nextUserId);
+      const savedWishlist = localStorage.getItem(wishlistKey);
+      if (savedWishlist) {
+        try {
+          setWishlist(JSON.parse(savedWishlist));
+        } catch {
+          setWishlist([]);
+        }
+      } else {
+        setWishlist([]);
+      }
+
+      setDiscountCode('');
+      setDiscountAmount(0);
+      setAppliedDiscount(null);
+      setDiscountMessage('');
+    }
+  }, [user]);
+
+  // Persist cart per current user key
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_CART, JSON.stringify(cart));
+      const key = getCartStorageKey(user?.id);
+      localStorage.setItem(key, JSON.stringify(cart));
     } catch (e) {
       console.error('Failed to save cart:', e);
     }
-  }, [cart]);
+  }, [cart, user?.id]);
 
-  // Persist wishlist
+  // Persist wishlist per current user key
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_WISHLIST, JSON.stringify(wishlist));
+      const key = getWishlistStorageKey(user?.id);
+      localStorage.setItem(key, JSON.stringify(wishlist));
     } catch (e) {
       console.error('Failed to save wishlist:', e);
     }
-  }, [wishlist]);
+  }, [wishlist, user?.id]);
 
   const addToCart = (product: Product, quantity = 1, variant?: ProductVariant) => {
+    // Only published and in-stock products can be added to the customer cart
+    if (product.status && product.status !== 'published') {
+      alert(`"${product.title}" is currently unlisted.`);
+      return;
+    }
+
+    if (typeof product.stock_quantity === 'number' && product.stock_quantity <= 0) {
+      alert(`"${product.title}" is currently out of stock.`);
+      return;
+    }
+
     setCart((prev) => {
       const existingIndex = prev.findIndex(
         (item) => item.product.id === product.id && item.variant?.id === variant?.id
@@ -132,6 +202,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDiscountAmount(0);
     setAppliedDiscount(null);
     setDiscountMessage('');
+    try {
+      const key = getCartStorageKey(user?.id);
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -236,4 +312,3 @@ export const useCart = () => {
   }
   return context;
 };
-

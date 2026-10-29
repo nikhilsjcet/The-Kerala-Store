@@ -211,7 +211,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
                         className="w-full px-4 py-2.5 text-left text-xs sm:text-sm text-emerald-950 bg-emerald-50 hover:bg-emerald-100 font-extrabold flex items-center gap-2 transition-colors cursor-pointer"
                       >
                         <User className="w-4 h-4 text-[#0A5C36]" />
-                        Sign In / Sign Up
+                        Sign In with Google
                       </button>
                     )}
 

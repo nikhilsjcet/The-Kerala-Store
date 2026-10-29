@@ -132,15 +132,15 @@ async function run() {
   }
 
   // 6. Create Commit
-  console.log(`📝 Creating Commit...`);
+  console.log(`💾 Creating Commit...`);
   const commit = await githubRequest('/git/commits', 'POST', {
-    message: 'Secure Admin Portal (/admin credentials), responsive mobile dashboard, default guest mode, real Supabase fallbacks',
+    message: process.env.COMMIT_MSG || 'Fix Google OAuth login only, isolate cart state, scope orders to customer user_id, and update official Kerala Cart favicon',
     tree: tree.sha,
     parents: parentCommitSha ? [parentCommitSha] : []
   });
 
   // 7. Update or Create Ref
-  console.log(`🌿 Updating main branch to point to new commit...`);
+  console.log(`📌 Updating main branch to point to new commit...`);
   if (parentCommitSha) {
     await githubRequest('/git/refs/heads/main', 'PATCH', {
       sha: commit.sha,
@@ -153,12 +153,11 @@ async function run() {
     });
   }
 
-  console.log(`\n🎉 SUCCESS! Your updated code has been pushed to:`);
-  console.log(`🔗 https://github.com/${owner}/${repo}\n`);
+  console.log(`\n🎉 SUCCESS! Your code has been pushed to:`);
+  console.log(`👉 https://github.com/${owner}/${repo}\n`);
 }
 
 run().catch((err) => {
   console.error('Push failed:', err.message);
   process.exit(1);
 });
-

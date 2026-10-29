@@ -384,11 +384,9 @@ export class StoreService {
     });
 
     if (supabaseProducts.length > 0) {
-      // Merge any locally added products not yet in Supabase
-      const supabaseIds = new Set(supabaseProducts.map((p) => p.id));
-      const supabaseSlugs = new Set(supabaseProducts.map((p) => p.slug));
-      const localOnly = localProducts.filter((p) => !supabaseIds.has(p.id) && !supabaseSlugs.has(p.slug));
-      return [...supabaseProducts, ...localOnly];
+      // In production with Supabase, Supabase products are the source of truth.
+      // Do not resurrect stale seed data or unlisted mock items from local fallback.
+      return supabaseProducts;
     }
 
     return localProducts;
@@ -709,23 +707,62 @@ export class StoreService {
   }
 
   // --- ORDERS ---
-  static async getOrders(): Promise<Order[]> {
+  // --- ORDERS ---
+  // Internal/Admin query: optional filter by userId / customerEmail
+  static async getOrders(userId?: string, customerEmail?: string): Promise<Order[]> {
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       if (client) {
-        const { data, error } = await client
-          .from('orders')
-          .select('*, items:order_items(*)')
-          .order('created_at', { ascending: false });
-        if (!error && data) {
-          return data.map((o: any) => ({
-            ...o,
-            items: Array.isArray(o.items) ? o.items : [],
-          })) as Order[];
+        try {
+          let query = client
+            .from('orders')
+            .select('*, items:order_items(*)')
+            .order('created_at', { ascending: false });
+
+          if (userId && isValidUUID(userId) && customerEmail) {
+            query = query.or(`user_id.eq.${userId},customer_email.ilike.${customerEmail.trim()}`);
+          } else if (userId && isValidUUID(userId)) {
+            query = query.eq('user_id', userId);
+          } else if (customerEmail) {
+            query = query.ilike('customer_email', customerEmail.trim());
+          }
+
+          const { data, error } = await query;
+          if (!error && data) {
+            return data.map((o: any) => ({
+              ...o,
+              items: Array.isArray(o.items) ? o.items : [],
+            })) as Order[];
+          }
+        } catch (e) {
+          console.warn('Supabase getOrders error:', e);
         }
       }
     }
-    return getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
+
+    const all = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
+    if (userId || customerEmail) {
+      const cleanEmail = customerEmail?.toLowerCase().trim();
+      return all.filter((o) => {
+        const matchesUser = userId && o.user_id === userId;
+        const matchesEmail = cleanEmail && o.customer_email?.toLowerCase().trim() === cleanEmail;
+        return matchesUser || matchesEmail;
+      });
+    }
+    return all;
+  }
+
+  // Strictly customer order history: never returns unauthenticated or global store orders!
+  static async getCustomerOrders(userId?: string, customerEmail?: string): Promise<Order[]> {
+    if (!userId && !customerEmail) {
+      return []; // Real customer empty state when not authenticated
+    }
+    return await this.getOrders(userId, customerEmail);
+  }
+
+  // Admin orders: all store orders for Admin Dashboard
+  static async getAllOrdersForAdmin(): Promise<Order[]> {
+    return await this.getOrders();
   }
 
   static async getOrderById(id: string): Promise<Order | null> {
@@ -765,7 +802,59 @@ export class StoreService {
     return orders.find((o) => o.order_number.toUpperCase() === cleanNum.toUpperCase()) || null;
   }
 
+  // Validate cart items before checkout (product exists, published, in stock, price valid)
+  static async validateCheckoutCart(cartItems: any[]): Promise<{
+    valid: boolean;
+    errors: string[];
+    verifiedSubtotal: number;
+    verifiedCart: any[];
+  }> {
+    const errors: string[] = [];
+    const verifiedCart: any[] = [];
+    let verifiedSubtotal = 0;
+
+    for (const item of cartItems) {
+      const prod = await this.getProductById(item.product.id) || await this.getProductBySlug(item.product.slug);
+      
+      if (!prod) {
+        errors.push(`"${item.product.title}" is no longer available in our store.`);
+        continue;
+      }
+
+      if (prod.status !== 'published') {
+        errors.push(`"${prod.title}" is currently unlisted and cannot be ordered.`);
+        continue;
+      }
+
+      if (typeof prod.stock_quantity === 'number' && prod.stock_quantity <= 0) {
+        errors.push(`"${prod.title}" is currently out of stock.`);
+        continue;
+      }
+
+      const activePrice = item.variant?.price || prod.price;
+      if (typeof activePrice !== 'number' || activePrice <= 0) {
+        errors.push(`"${prod.title}" has an invalid price.`);
+        continue;
+      }
+
+      const itemTotal = activePrice * item.quantity;
+      verifiedSubtotal += itemTotal;
+      verifiedCart.push({
+        ...item,
+        product: prod,
+      });
+    }
+
+    return {
+      valid: errors.length === 0 && verifiedCart.length > 0,
+      errors,
+      verifiedSubtotal,
+      verifiedCart,
+    };
+  }
+
   static async createOrder(orderInput: {
+    user_id?: string;
     customer_name: string;
     customer_email: string;
     customer_phone: string;
@@ -787,6 +876,7 @@ export class StoreService {
     const newOrder: Order = {
       id: `ord-${Date.now()}`,
       order_number: orderNumber,
+      user_id: orderInput.user_id && isValidUUID(orderInput.user_id) ? orderInput.user_id : undefined,
       ...orderInput,
       fulfilment_status: 'pending',
       created_at: now,
@@ -798,6 +888,10 @@ export class StoreService {
       if (client) {
         try {
           const { id, items, ...orderRow } = newOrder;
+          // Clean up user_id if not valid UUID
+          if (!orderRow.user_id || !isValidUUID(orderRow.user_id)) {
+            delete (orderRow as any).user_id;
+          }
           const { data, error } = await client.from('orders').insert(orderRow).select().single();
           if (!error && data) {
             if (items && items.length > 0) {

@@ -66,9 +66,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={openAuthModal}
-            className="px-6 py-3 bg-[#0A5C36] hover:bg-[#074326] text-white rounded-2xl font-bold text-xs shadow-md transition-all cursor-pointer"
+            className="px-6 py-3 bg-[#0A5C36] hover:bg-[#074326] text-white rounded-2xl font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
           >
-            Sign In / Sign Up
+            Continue with Google
           </button>
           <button
             onClick={() => onNavigate('shop')}
@@ -123,12 +123,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
     setIsSubmitting(true);
 
     try {
-      // Server-side price recalculation simulation
-      const verifiedSubtotal = cart.reduce((sum, item) => {
-        const price = item.variant?.price || item.product.price;
-        return sum + price * item.quantity;
-      }, 0);
+      // Server-side price recalculation & availability validation
+      const validation = await StoreService.validateCheckoutCart(cart);
+      if (!validation.valid) {
+        setErrorMessage(validation.errors.join(' '));
+        setIsSubmitting(false);
+        return;
+      }
 
+      const verifiedSubtotal = validation.verifiedSubtotal;
       const verifiedShipping = verifiedSubtotal >= 999 ? 0 : 99;
       let verifiedDiscount = 0;
       if (discountCode) {
@@ -138,7 +141,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
       const verifiedTotal = Math.max(0, verifiedSubtotal - verifiedDiscount + verifiedShipping);
 
       // Order Items
-      const orderItems = cart.map((item) => ({
+      const orderItems = validation.verifiedCart.map((item) => ({
         product_id: item.product.id,
         product_title: item.product.title,
         product_image: item.product.images[0],
@@ -152,6 +155,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
       // Helper to finalize order in Supabase / StoreService
       const createFinalOrder = async (paidId?: string) => {
         const newOrder = await StoreService.createOrder({
+          user_id: user?.id,
           customer_name: formData.fullName,
           customer_email: formData.email,
           customer_phone: formData.phone,

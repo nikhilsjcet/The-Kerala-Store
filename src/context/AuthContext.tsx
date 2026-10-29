@@ -12,14 +12,14 @@ interface AuthContextType {
   isOtpModalOpen: boolean;
   openOtpModal: () => void;
   closeOtpModal: () => void;
+  signInWithGoogle: () => Promise<{ error?: any; data?: any }>;
+  verifyMasterAdminPasscode: (passcode: string) => boolean;
   loginWithPhone: (phone: string, fullName?: string) => void;
   signInWithEmail: (email: string, password: string) => Promise<{ error: any; data?: any }>;
   signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error: any; data?: any; isAlreadyRegistered?: boolean }>;
-  signInWithGoogle: () => Promise<{ error?: any; data?: any }>;
   sendEmailOtp: (email: string, fullName?: string, phone?: string) => Promise<{ error: any; data?: any }>;
   verifyEmailOtp: (email: string, token: string, fullName?: string, phone?: string, type?: 'signup' | 'email') => Promise<{ error: any; data?: any }>;
   resendSignupOtp: (email: string) => Promise<{ error: any; data?: any }>;
-  verifyMasterAdminPasscode: (passcode: string) => boolean;
   sendMagicLink?: (email: string) => Promise<{ error: any; data?: any }>;
   resetPassword?: (email: string) => Promise<{ error: any; data?: any }>;
   loginAsAdmin: () => void;
@@ -32,6 +32,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY_USER = 'thekeralastore_current_user';
 
+export const MASTER_ADMIN_PASSCODE = 'Kerala@2026';
+
 const DEFAULT_ADMIN: UserProfile = {
   id: 'usr-admin-1',
   email: 'admin@thekeralastore.shop',
@@ -40,8 +42,6 @@ const DEFAULT_ADMIN: UserProfile = {
   phone: '+91 98460 12345',
   created_at: new Date().toISOString(),
 };
-
-export const MASTER_ADMIN_PASSCODE = 'Kerala@2026';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(() => {
@@ -78,106 +78,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const openOtpModal = () => setIsOtpModalOpen(true);
   const closeOtpModal = () => setIsOtpModalOpen(false);
 
-  const signInWithEmail = async (email: string, pass: string): Promise<{ error: any; data?: any }> => {
-    if (isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      if (client) {
-        const { data, error } = await client.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
-          password: pass,
-        });
-        if (!error && data.user) {
-          const profile: UserProfile = {
-            id: data.user.id,
-            email: data.user.email || email.trim().toLowerCase(),
-            full_name: data.user.user_metadata?.full_name || email.trim().split('@')[0],
-            role: data.user.user_metadata?.role === 'admin' ? 'admin' : 'customer',
-            created_at: data.user.created_at,
-          };
-          setUser(profile);
-          closeAuthModal();
-        }
-        return { data, error };
-      }
-    }
-    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
-  };
-
-  const signUpWithEmail = async (email: string, pass: string, fullName: string): Promise<{ error: any; data?: any; isAlreadyRegistered?: boolean }> => {
-    if (isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      if (client) {
-        const { data, error } = await client.auth.signUp({
-          email: email.trim().toLowerCase(),
-          password: pass,
-          options: {
-            data: {
-              full_name: fullName.trim() || email.trim().split('@')[0],
-              role: 'customer',
-            },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-
-        // Supabase returns a user with empty identities when the account is already registered and confirmed
-        const isAlreadyRegistered = Boolean(
-          data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0
-        );
-
-        if (!error && data?.user && data?.session) {
-          const profile: UserProfile = {
-            id: data.user.id,
-            email: data.user.email || email.trim().toLowerCase(),
-            full_name: fullName.trim() || data.user.email?.split('@')[0] || 'Customer',
-            role: 'customer',
-            created_at: data.user.created_at,
-          };
-          setUser(profile);
-          closeAuthModal();
-        }
-        return { data, error, isAlreadyRegistered };
-      }
-    }
-    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
-  };
-
+  // 1. Google OAuth Sign-In (Primary customer authentication)
   const signInWithGoogle = async (): Promise<{ error?: any; data?: any }> => {
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       if (client) {
-        return await client.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: window.location.origin,
-          },
-        });
-      }
-    }
-    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
-  };
-
-  // Passwordless Email OTP Login: strictly existing users (shouldCreateUser: false)
-  const sendEmailOtp = async (
-    email: string,
-    fullName?: string,
-    phone?: string
-  ): Promise<{ error: any; data?: any }> => {
-    if (isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      if (client) {
         try {
-          const { data, error } = await client.auth.signInWithOtp({
-            email: email.trim().toLowerCase(),
+          const redirectTo = window.location.origin;
+          return await client.auth.signInWithOAuth({
+            provider: 'google',
             options: {
-              shouldCreateUser: false, // Per Requirement 3: do not create new user during passwordless OTP login
-              emailRedirectTo: window.location.origin,
-              data: {
-                full_name: fullName?.trim() || email.trim().split('@')[0],
-                phone: phone?.trim() || '',
+              redirectTo,
+              queryParams: {
+                prompt: 'select_account',
               },
             },
           });
-          return { data, error };
         } catch (err: any) {
           return { error: err };
         }
@@ -186,77 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
-  // Verify 6-Digit OTP: strictly maintains distinct flow type ('signup' vs 'email')
-  const verifyEmailOtp = async (
-    email: string,
-    token: string,
-    fullName?: string,
-    phone?: string,
-    type: 'signup' | 'email' = 'signup'
-  ): Promise<{ error: any; data?: any }> => {
-    const cleanToken = token.trim();
-    const cleanEmail = email.trim().toLowerCase();
-
-    if (isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      if (client) {
-        try {
-          const { data, error } = await client.auth.verifyOtp({
-            email: cleanEmail,
-            token: cleanToken,
-            type: type,
-          });
-
-          if (!error && data?.user) {
-            const profile: UserProfile = {
-              id: data.user.id,
-              email: data.user.email || cleanEmail,
-              full_name: fullName?.trim() || data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
-              phone: phone?.trim() || data.user.user_metadata?.phone || '',
-              role: data.user.user_metadata?.role === 'admin' ? 'admin' : 'customer',
-              created_at: data.user.created_at,
-            };
-            setUser(profile);
-            closeAuthModal();
-            return { data, error: null };
-          }
-
-          if (error) {
-            return { error, data: null };
-          }
-        } catch (err: any) {
-          return { error: err, data: null };
-        }
-      }
-    }
-
-    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' }, data: null };
-  };
-
-  // Resend 6-Digit Signup Confirmation OTP
-  const resendSignupOtp = async (email: string): Promise<{ error: any; data?: any }> => {
-    const cleanEmail = email.trim().toLowerCase();
-    if (isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      if (client) {
-        try {
-          const { data, error } = await client.auth.resend({
-            type: 'signup',
-            email: cleanEmail,
-            options: {
-              emailRedirectTo: window.location.origin,
-            },
-          });
-          return { data, error };
-        } catch (err: any) {
-          return { error: err };
-        }
-      }
-    }
-    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
-  };
-
-  // Verify Master Store Passcode for Admin Gate
+  // 2. Master Admin Passcode for /admin
   const verifyMasterAdminPasscode = (passcode: string): boolean => {
     if (passcode.trim() === MASTER_ADMIN_PASSCODE) {
       const adminProfile: UserProfile = {
@@ -273,31 +119,152 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   };
 
-  const sendMagicLink = async (email: string): Promise<{ error: any; data?: any }> => {
+  // 3. Sync User state to localStorage
+  useEffect(() => {
+    if (user) {
+      try {
+        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      localStorage.removeItem(STORAGE_KEY_USER);
+    }
+  }, [user]);
+
+  // 4. Supabase Session & OAuth Callback Listener
+  useEffect(() => {
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       if (client) {
-        return await client.auth.signInWithOtp({
-          email: email.trim().toLowerCase(),
-          options: {
-            emailRedirectTo: window.location.origin,
-          },
+        // Initial session check (e.g. on return from OAuth redirect)
+        client.auth.getSession().then(({ data: { session }, error }) => {
+          if (!error && session?.user) {
+            const meta = session.user.user_metadata || {};
+            const resolvedName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Customer';
+            const profile: UserProfile = {
+              id: session.user.id,
+              email: session.user.email || '',
+              full_name: resolvedName,
+              phone: meta.phone || session.user.phone || '',
+              role: meta.role === 'admin' ? 'admin' : 'customer',
+              created_at: session.user.created_at,
+            };
+            setUser(profile);
+            closeAuthModal();
+
+            // Clean up hash fragments if returning from OAuth
+            if (window.location.hash.includes('access_token')) {
+              window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+          }
         });
+
+        // Real-time auth state subscription
+        const { data: authListener } = client.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            const meta = session.user.user_metadata || {};
+            const resolvedName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Customer';
+            const profile: UserProfile = {
+              id: session.user.id,
+              email: session.user.email || '',
+              full_name: resolvedName,
+              phone: meta.phone || session.user.phone || '',
+              role: meta.role === 'admin' ? 'admin' : 'customer',
+              created_at: session.user.created_at,
+            };
+            setUser(profile);
+            closeAuthModal();
+
+            if (window.location.hash.includes('access_token')) {
+              window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            try {
+              localStorage.removeItem(STORAGE_KEY_USER);
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        });
+
+        return () => {
+          authListener?.subscription?.unsubscribe();
+        };
       }
     }
-    return { error: { message: 'Authentication service is not connected.' } };
+  }, []);
+
+  // 5. Sign Out
+  const logout = () => {
+    if (isSupabaseConfigured()) {
+      const client = getSupabaseClient();
+      client?.auth.signOut().catch(() => {});
+    }
+    setUser(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY_USER);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const resetPassword = async (email: string): Promise<{ error: any; data?: any }> => {
+  // Admin and testing convenience
+  const loginAsAdmin = () => setUser(DEFAULT_ADMIN);
+  const loginAsCustomer = () => {
+    const cust: UserProfile = {
+      id: `usr-${Date.now()}`,
+      email: 'customer@thekeralastore.shop',
+      full_name: 'Kerala Shopper',
+      role: 'customer',
+      created_at: new Date().toISOString(),
+    };
+    setUser(cust);
+  };
+  const switchRole = (role: 'admin' | 'customer') => {
+    if (role === 'admin') loginAsAdmin();
+    else loginAsCustomer();
+  };
+
+  // Legacy compat functions (safe no-op / redirect to Google)
+  const signInWithEmail = async (email: string, pass: string): Promise<{ error: any; data?: any }> => {
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       if (client) {
-        return await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-          redirectTo: window.location.origin,
+        return await client.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password: pass,
         });
       }
     }
-    return { error: { message: 'Authentication service is not connected.' } };
+    return { error: { message: 'Customer login now uses Google Sign-In.' } };
+  };
+
+  const signUpWithEmail = async (email: string, pass: string, fullName: string): Promise<{ error: any; data?: any; isAlreadyRegistered?: boolean }> => {
+    if (isSupabaseConfigured()) {
+      const client = getSupabaseClient();
+      if (client) {
+        return await client.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password: pass,
+          options: { data: { full_name: fullName.trim() } },
+        });
+      }
+    }
+    return { error: { message: 'Customer registration now uses Google Sign-In.' } };
+  };
+
+  const sendEmailOtp = async (email: string): Promise<{ error: any; data?: any }> => {
+    return { error: { message: 'Please use Continue with Google to sign in.' } };
+  };
+
+  const verifyEmailOtp = async (): Promise<{ error: any; data?: any }> => {
+    return { error: { message: 'Please use Continue with Google to sign in.' } };
+  };
+
+  const resendSignupOtp = async (): Promise<{ error: any; data?: any }> => {
+    return { error: { message: 'Please use Continue with Google to sign in.' } };
   };
 
   const loginWithPhone = (phone: string, fullName?: string) => {
@@ -314,82 +281,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     closeOtpModal();
   };
 
-  useEffect(() => {
-    if (user) {
-      try {
-        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      localStorage.removeItem(STORAGE_KEY_USER);
-    }
-  }, [user]);
-
-  // Listen to Supabase auth state if configured
-  useEffect(() => {
-    if (isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      if (client) {
-        client.auth.getSession().then(({ data: { session } }) => {
-          if (session?.user) {
-            setUser({
-              id: session.user.id,
-              email: session.user.email || 'user@example.com',
-              full_name: session.user.user_metadata?.full_name || 'Store User',
-              role: session.user.user_metadata?.role === 'admin' ? 'admin' : 'customer',
-              created_at: session.user.created_at,
-            });
-          }
-        });
-
-        const { data: authListener } = client.auth.onAuthStateChange((_event, session) => {
-          if (session?.user) {
-            setUser({
-              id: session.user.id,
-              email: session.user.email || 'user@example.com',
-              full_name: session.user.user_metadata?.full_name || 'Store User',
-              role: session.user.user_metadata?.role === 'admin' ? 'admin' : 'customer',
-              created_at: session.user.created_at,
-            });
-          }
-        });
-
-        return () => {
-          authListener.subscription.unsubscribe();
-        };
-      }
-    }
-  }, []);
-
-  const loginAsAdmin = () => setUser(DEFAULT_ADMIN);
-  const loginAsCustomer = () => {
-    const cust: UserProfile = {
-      id: `usr-${Date.now()}`,
-      email: 'customer@thekeralastore.shop',
-      full_name: 'Kerala Shopper',
-      role: 'customer',
-      created_at: new Date().toISOString(),
-    };
-    setUser(cust);
-  };
-  const logout = () => {
-    if (isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      client?.auth.signOut();
-    }
-    setUser(null);
-    try {
-      localStorage.removeItem(STORAGE_KEY_USER);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-  const switchRole = (role: 'admin' | 'customer') => {
-    if (role === 'admin') loginAsAdmin();
-    else loginAsCustomer();
-  };
-
   const isAdmin = user?.role === 'admin';
 
   return (
@@ -404,16 +295,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isOtpModalOpen,
         openOtpModal,
         closeOtpModal,
+        signInWithGoogle,
+        verifyMasterAdminPasscode,
         loginWithPhone,
         signInWithEmail,
         signUpWithEmail,
-        signInWithGoogle,
         sendEmailOtp,
         verifyEmailOtp,
         resendSignupOtp,
-        verifyMasterAdminPasscode,
-        sendMagicLink,
-        resetPassword,
         loginAsAdmin,
         loginAsCustomer,
         logout,
@@ -432,4 +321,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

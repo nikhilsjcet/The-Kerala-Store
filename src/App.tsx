@@ -8,7 +8,6 @@ import { CartDrawer } from './components/storefront/CartDrawer';
 import { Footer } from './components/storefront/Footer';
 import { InfoModal } from './components/modals/InfoModal';
 import { SupabaseModal } from './components/modals/SupabaseModal';
-import { OtpLoginModal } from './components/modals/OtpLoginModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { Instagram } from 'lucide-react';
 
@@ -289,13 +288,10 @@ const MainApp: React.FC = () => {
         onClose={() => setIsSupabaseModalOpen(false)}
       />
 
-      {/* 9. Customer Google & Email Auth Modal (Brevo SMTP) */}
+      {/* 9. Customer Google Authentication Modal */}
       <AuthModal />
 
-      {/* 10. Mobile OTP Login Modal */}
-      <OtpLoginModal />
-
-      {/* 11. Floating Instagram Help & Order Support */}
+      {/* 10. Floating Instagram Help & Order Support */}
       <aside aria-label="Support and help" className="fixed bottom-6 right-6 z-40">
         <a
           href="https://instagram.com/thekeralastore_"
