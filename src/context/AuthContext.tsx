@@ -82,13 +82,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const client = getSupabaseClient();
       if (client) {
         const { data, error } = await client.auth.signInWithPassword({
-          email: email.trim(),
+          email: email.trim().toLowerCase(),
           password: pass,
         });
         if (!error && data.user) {
           const profile: UserProfile = {
             id: data.user.id,
-            email: data.user.email || email.trim(),
+            email: data.user.email || email.trim().toLowerCase(),
             full_name: data.user.user_metadata?.full_name || email.trim().split('@')[0],
             role: data.user.user_metadata?.role === 'admin' ? 'admin' : 'customer',
             created_at: data.user.created_at,
@@ -99,17 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { data, error };
       }
     }
-    // Local fallback
-    const profile: UserProfile = {
-      id: `usr-${Date.now()}`,
-      email: email.trim(),
-      full_name: email.trim().split('@')[0],
-      role: 'customer',
-      created_at: new Date().toISOString(),
-    };
-    setUser(profile);
-    closeAuthModal();
-    return { error: null, data: { user: profile } };
+    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
   const signUpWithEmail = async (email: string, pass: string, fullName: string): Promise<{ error: any; data?: any }> => {
@@ -117,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const client = getSupabaseClient();
       if (client) {
         const { data, error } = await client.auth.signUp({
-          email: email.trim(),
+          email: email.trim().toLowerCase(),
           password: pass,
           options: {
             data: {
@@ -130,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!error && data.user && data.session) {
           const profile: UserProfile = {
             id: data.user.id,
-            email: data.user.email || email.trim(),
+            email: data.user.email || email.trim().toLowerCase(),
             full_name: fullName.trim() || data.user.email?.split('@')[0] || 'Customer',
             role: 'customer',
             created_at: data.user.created_at,
@@ -141,16 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { data, error };
       }
     }
-    const profile: UserProfile = {
-      id: `usr-${Date.now()}`,
-      email: email.trim(),
-      full_name: fullName.trim() || email.trim().split('@')[0],
-      role: 'customer',
-      created_at: new Date().toISOString(),
-    };
-    setUser(profile);
-    closeAuthModal();
-    return { error: null, data: { user: profile } };
+    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
   const signInWithGoogle = async (): Promise<{ error?: any; data?: any }> => {
@@ -165,17 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
     }
-    // Simulated Google Login for local/sandbox testing
-    const profile: UserProfile = {
-      id: `google-user-${Date.now()}`,
-      email: 'customer.google@thekeralastore.com',
-      full_name: 'Kerala Shopper (Google)',
-      role: 'customer',
-      created_at: new Date().toISOString(),
-    };
-    setUser(profile);
-    closeAuthModal();
-    return { data: { user: profile } };
+    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
   // Send 6-Digit Email OTP via Supabase (Brevo SMTP)
@@ -206,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     }
-    return { error: null, data: { message: 'OTP sent successfully (Simulated)' } };
+    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
   // Verify 6-Digit Email OTP
@@ -243,55 +214,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return { data, error: null };
           }
 
-          // If Supabase failed or rate-limited, but token matches testing fallback '123456'
-          if (cleanToken === '123456') {
-            const fallbackProfile: UserProfile = {
-              id: `usr-${Date.now()}`,
-              email: cleanEmail,
-              full_name: fullName?.trim() || cleanEmail.split('@')[0],
-              phone: phone?.trim() || '',
-              role: 'customer',
-              created_at: new Date().toISOString(),
-            };
-            setUser(fallbackProfile);
-            closeAuthModal();
-            return { data: { user: fallbackProfile }, error: null };
-          }
-
           if (error) {
             return { error, data: null };
           }
         } catch (err: any) {
-          if (cleanToken === '123456') {
-            const fallbackProfile: UserProfile = {
-              id: `usr-${Date.now()}`,
-              email: cleanEmail,
-              full_name: fullName?.trim() || cleanEmail.split('@')[0],
-              phone: phone?.trim() || '',
-              role: 'customer',
-              created_at: new Date().toISOString(),
-            };
-            setUser(fallbackProfile);
-            closeAuthModal();
-            return { data: { user: fallbackProfile }, error: null };
-          }
           return { error: err, data: null };
         }
       }
     }
 
-    // Local simulated verification
-    const profile: UserProfile = {
-      id: `usr-${Date.now()}`,
-      email: cleanEmail,
-      full_name: fullName?.trim() || cleanEmail.split('@')[0],
-      phone: phone?.trim() || '',
-      role: 'customer',
-      created_at: new Date().toISOString(),
-    };
-    setUser(profile);
-    closeAuthModal();
-    return { error: null, data: { user: profile } };
+    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' }, data: null };
   };
 
   // Verify Master Store Passcode for Admin Gate
@@ -316,26 +248,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const client = getSupabaseClient();
       if (client) {
         return await client.auth.signInWithOtp({
-          email: email.trim(),
+          email: email.trim().toLowerCase(),
           options: {
             emailRedirectTo: window.location.origin,
           },
         });
       }
     }
-    return { error: null, data: { message: 'Magic link simulated' } };
+    return { error: { message: 'Authentication service is not connected.' } };
   };
 
   const resetPassword = async (email: string): Promise<{ error: any; data?: any }> => {
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       if (client) {
-        return await client.auth.resetPasswordForEmail(email.trim(), {
+        return await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
           redirectTo: window.location.origin,
         });
       }
     }
-    return { error: null, data: { message: 'Reset email simulated' } };
+    return { error: { message: 'Authentication service is not connected.' } };
   };
 
   const loginWithPhone = (phone: string, fullName?: string) => {

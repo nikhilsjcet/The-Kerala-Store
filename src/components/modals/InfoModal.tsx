@@ -35,10 +35,29 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
       case 'contact':
         return {
           title: 'Support & Help',
-          icon: <Instagram className="w-6 h-6 text-pink-600" />,
+          icon: <Mail className="w-6 h-6 text-[#0A5C36]" />,
           body: (
             <div className="space-y-4 text-sm text-gray-600">
-              <p>For any inquiries, customer support, or order help, please direct message us on Instagram:</p>
+              <p>For any order help, returns, tracking, or customer inquiries, reach our team directly:</p>
+              
+              <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200/80 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#0A5C36] flex items-center justify-center text-white">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold">Official Email Support</p>
+                    <p className="font-bold text-gray-900 text-sm">support@thekeralastore.shop</p>
+                  </div>
+                </div>
+                <a
+                  href="mailto:support@thekeralastore.shop"
+                  className="px-3.5 py-1.5 bg-[#0A5C36] text-white font-bold text-xs rounded-xl shadow-xs hover:bg-[#08482A] transition-colors"
+                >
+                  Send Email
+                </a>
+              </div>
+
               <div className="p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl border border-pink-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
@@ -154,7 +173,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
           icon: <ShieldCheck className="w-6 h-6 text-[#0A5C36]" />,
           body: (
             <p className="text-sm text-gray-600">
-              For any questions regarding our terms, refunds, or support, please DM us directly on Instagram at <a href="https://instagram.com/thekeralastore_" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-semibold hover:underline">@thekeralastore_</a>.
+              For any questions regarding our terms, refunds, or support, please email us at <a href="mailto:support@thekeralastore.shop" className="text-[#0A5C36] font-semibold hover:underline">support@thekeralastore.shop</a> or DM us on Instagram at <a href="https://instagram.com/thekeralastore_" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-semibold hover:underline">@thekeralastore_</a>.
             </p>
           ),
         };

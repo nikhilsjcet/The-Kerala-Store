@@ -159,14 +159,18 @@ export const AuthModal: React.FC = () => {
       setIsLoading(false);
 
       if (error) {
-        setErrorMsg(`${error.message || 'Email delivery failed'}. If Brevo SMTP is pending, you can log in with Password or use test code 123456.`);
-        // Allow user to proceed to code input with test code fallback
-        setOtpSent(true);
-        setCountdown(45);
+        const rawMsg = error.message || 'Email delivery failed';
+        if (rawMsg.toLowerCase().includes('rate limit') || rawMsg.toLowerCase().includes('frequency')) {
+          setErrorMsg('Too many OTP attempts. Please wait 60 seconds before requesting another code.');
+        } else if (rawMsg.toLowerCase().includes('sender') || rawMsg.toLowerCase().includes('smtp')) {
+          setErrorMsg('Email verification service error. Please sign in with Password while SMTP is configured.');
+        } else {
+          setErrorMsg(rawMsg);
+        }
       } else {
         setOtpSent(true);
-        setCountdown(45);
-        setSuccessMsg(`A 6-digit verification code was sent to ${cleanEmail}. (Test fallback: 123456)`);
+        setCountdown(60);
+        setSuccessMsg(`A 6-digit verification code has been sent to ${cleanEmail}. Please check your inbox or spam folder.`);
       }
     } catch (err: any) {
       setIsLoading(false);
@@ -192,7 +196,7 @@ export const AuthModal: React.FC = () => {
       setIsLoading(false);
 
       if (error) {
-        setErrorMsg(error.message || 'Invalid or expired OTP. Please check the code or use test code 123456.');
+        setErrorMsg(error.message || 'Invalid or expired OTP code. Please enter the correct code from your email or click Resend.');
       } else {
         setSuccessMsg(activeTab === 'signup' ? 'Account created and verified! Welcome to The Kerala Store.' : 'OTP verified! Signed in successfully.');
         setTimeout(() => closeAuthModal(), 800);
@@ -483,9 +487,9 @@ export const AuthModal: React.FC = () => {
         {otpSent && (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 text-center">
-              <span className="text-[11px] text-gray-500 block">OTP sent to:</span>
+              <span className="text-[11px] text-gray-500 block">OTP verification code sent to:</span>
               <strong className="text-xs text-gray-800 font-mono">{email}</strong>
-              <span className="text-[10px] text-gray-400 block mt-0.5">Tip: If email is delayed, use test code <code className="font-bold text-emerald-700">123456</code></span>
+              <span className="text-[10px] text-gray-400 block mt-0.5">Please check your inbox or spam folder</span>
             </div>
 
             <div>
@@ -497,7 +501,7 @@ export const AuthModal: React.FC = () => {
                 <input
                   type="text"
                   maxLength={6}
-                  placeholder="123456"
+                  placeholder="••••••"
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                   required

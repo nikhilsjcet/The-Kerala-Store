@@ -38,17 +38,26 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateCategory, onOpenPolicy
                   Kottayam, Kerala, India
                 </span>
               </p>
-              <div className="pt-1">
-                <p className="text-xs font-semibold text-gray-500 mb-1.5">For Support &amp; Help:</p>
-                <a
-                  href="https://instagram.com/thekeralastore_"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-pink-200 text-gray-800 hover:text-pink-600 font-semibold text-xs transition-all shadow-2xs group"
-                >
-                  <Instagram className="w-4 h-4 text-pink-600 group-hover:scale-110 transition-transform" />
-                  <span>@thekeralastore_</span>
-                </a>
+              <div className="pt-1 space-y-2">
+                <p className="text-xs font-semibold text-gray-500 mb-1">For Support &amp; Help:</p>
+                <div className="flex flex-col gap-1.5">
+                  <a
+                    href="mailto:support@thekeralastore.shop"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-stone-50 border border-stone-200 text-gray-800 hover:text-[#0A5C36] font-semibold text-xs transition-all shadow-2xs"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-[#0A5C36]" />
+                    <span>support@thekeralastore.shop</span>
+                  </a>
+                  <a
+                    href="https://instagram.com/thekeralastore_"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-pink-200 text-gray-800 hover:text-pink-600 font-semibold text-xs transition-all shadow-2xs group"
+                  >
+                    <Instagram className="w-3.5 h-3.5 text-pink-600 group-hover:scale-110 transition-transform" />
+                    <span>@thekeralastore_</span>
+                  </a>
+                </div>
               </div>
             </div>
 

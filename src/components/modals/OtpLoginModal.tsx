@@ -129,7 +129,7 @@ export const OtpLoginModal: React.FC = () => {
 
     setIsVerifying(true);
     setTimeout(() => {
-      if (code === generatedOtp || code === '123456') {
+      if (code === generatedOtp) {
         loginWithPhone(phoneNumber, fullName);
       } else {
         setErrorMsg('Invalid verification code. Please check and try again.');
