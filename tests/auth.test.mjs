@@ -160,4 +160,59 @@ describe('TheKeralaStore Authentication, Cart & Order Scoping Tests', () => {
     assert.equal(orderCreationCount, 0, 'Order creation must strictly never be triggered by adding to cart');
   });
 
+  // 8. Admin Customers list derivation: normalizes phone, merges duplicate customer orders, filters dummy/admin
+  test('Derives unique store customers correctly and ignores dummy/admin accounts', () => {
+    function deriveCustomers(orders) {
+      const map = new Map();
+      orders.forEach((o) => {
+        const emailLower = (o.customer_email || '').trim().toLowerCase();
+        const nameLower = (o.customer_name || '').trim().toLowerCase();
+
+        if (
+          emailLower === 'admin@thekeralastore.shop' ||
+          emailLower === 'shopper@example.com' ||
+          nameLower.includes('rohit sharma')
+        ) {
+          return;
+        }
+
+        const digits = (o.customer_phone || '').replace(/\D/g, '').slice(-10);
+        const cleanEmail = emailLower;
+        const key = digits || cleanEmail;
+        if (!key) return;
+
+        const existing = map.get(key);
+        if (existing) {
+          existing.orderCount += 1;
+          existing.totalSpent += o.total_amount;
+        } else {
+          map.set(key, {
+            name: o.customer_name,
+            phone: `+91 ${digits}`,
+            email: cleanEmail,
+            orderCount: 1,
+            totalSpent: o.total_amount,
+          });
+        }
+      });
+      return Array.from(map.values());
+    }
+
+    const testOrders = [
+      { customer_name: 'Anjali Nair', customer_phone: '+91 9846012345', customer_email: 'anjali@example.com', total_amount: 1200 },
+      { customer_name: 'Anjali Nair', customer_phone: '09846012345', customer_email: 'anjali@example.com', total_amount: 800 },
+      { customer_name: 'Rohit Sharma', customer_phone: '9999999999', customer_email: 'shopper@example.com', total_amount: 500 },
+      { customer_name: 'Administrator', customer_phone: '1234567890', customer_email: 'admin@thekeralastore.shop', total_amount: 9999 },
+      { customer_name: 'Manu Pillai', customer_phone: '9447123456', customer_email: 'manu@example.com', total_amount: 450 },
+    ];
+
+    const result = deriveCustomers(testOrders);
+    assert.equal(result.length, 2, 'Should only derive 2 real unique customers');
+    const anjali = result.find((c) => c.name === 'Anjali Nair');
+    assert.ok(anjali);
+    assert.equal(anjali.orderCount, 2, 'Two orders with differing phone format merged into 1 customer');
+    assert.equal(anjali.totalSpent, 2000, 'Total spent summed accurately');
+    assert.equal(result.some((c) => c.name === 'Rohit Sharma'), false, 'Dummy accounts filtered');
+  });
+
 });

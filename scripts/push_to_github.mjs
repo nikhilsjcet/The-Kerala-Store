@@ -6,16 +6,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
-// Read arguments: token, owner, repo
 const token = process.env.GITHUB_TOKEN || process.argv[2];
-const repoInput = process.env.GITHUB_REPO || process.argv[3]; // format: owner/repo or full url
+const repoInput = process.env.GITHUB_REPO || process.argv[3];
 
 if (!token || !repoInput) {
   console.error('Usage: node scripts/push_to_github.mjs <GITHUB_TOKEN> <OWNER/REPO or GITHUB_URL>');
   process.exit(1);
 }
 
-// Clean repo name
 let repoPath = repoInput.replace('https://github.com/', '').replace(/\.git$/, '').trim();
 const [owner, repo] = repoPath.split('/');
 
@@ -76,20 +74,12 @@ async function githubRequest(endpoint, method = 'GET', body = null) {
 async function run() {
   console.log(`🚀 Preparing to push to https://github.com/${owner}/${repo}...`);
 
-  // 1. Check repo exists
-  try {
-    await githubRequest('');
-    console.log(`✅ Repository ${owner}/${repo} found!`);
-  } catch (e) {
-    console.error(`❌ Could not access repo: ${e.message}`);
-    process.exit(1);
-  }
+  await githubRequest('');
+  console.log(`✅ Repository ${owner}/${repo} found!`);
 
-  // 2. Collect all files
   const files = getAllFiles(rootDir);
   console.log(`📦 Found ${files.length} project files to upload.`);
 
-  // 3. Upload blobs
   const treeItems = [];
   let uploaded = 0;
 
@@ -116,30 +106,24 @@ async function run() {
     }
   }
 
-  // 4. Create Tree
   console.log(`🌳 Creating Git Tree...`);
   const tree = await githubRequest('/git/trees', 'POST', {
     tree: treeItems
   });
 
-  // 5. Check if main branch exists to get parent commit
   let parentCommitSha = null;
   try {
     const ref = await githubRequest('/git/refs/heads/main');
     parentCommitSha = ref.object.sha;
-  } catch {
-    // Branch might not exist yet if fresh empty repo
-  }
+  } catch {}
 
-  // 6. Create Commit
   console.log(`💾 Creating Commit...`);
   const commit = await githubRequest('/git/commits', 'POST', {
-    message: process.env.COMMIT_MSG || 'Fix Google OAuth login only, isolate cart state, scope orders to customer user_id, and update official Kerala Cart favicon',
+    message: 'Admin delivery status direct updater, accurate customer list normalization, remove admin link from login modal, logout redirect to home',
     tree: tree.sha,
     parents: parentCommitSha ? [parentCommitSha] : []
   });
 
-  // 7. Update or Create Ref
   console.log(`📌 Updating main branch to point to new commit...`);
   if (parentCommitSha) {
     await githubRequest('/git/refs/heads/main', 'PATCH', {

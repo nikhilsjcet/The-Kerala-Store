@@ -187,22 +187,41 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
     <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs overflow-hidden transition-all hover:border-gray-300">
       {/* Top Header */}
       <div className="p-4 sm:p-5 bg-stone-50/70 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <span className="font-mono font-extrabold text-gray-900 text-sm sm:text-base">{order.order_number}</span>
           <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
             order.payment_method === 'cod' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
           }`}>
             {order.payment_method.toUpperCase()}
           </span>
-          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${
-            order.fulfilment_status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
-            order.fulfilment_status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-            order.fulfilment_status === 'supplier_ordered' ? 'bg-purple-100 text-purple-800' :
-            order.fulfilment_status === 'out_for_delivery' ? 'bg-indigo-100 text-indigo-800' :
-            'bg-gray-100 text-gray-700'
-          }`}>
-            Status: {order.fulfilment_status.replace(/_/g, ' ')}
-          </span>
+
+          {/* Quick Delivery Status Dropdown for Admin */}
+          <div className="flex items-center gap-1.5 bg-white pl-2.5 pr-1.5 py-1 rounded-xl border border-gray-200 shadow-2xs">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Delivery:</span>
+            <select
+              value={status}
+              disabled={isSaving}
+              onChange={async (e) => {
+                const newStatus = e.target.value as FulfilmentStatus;
+                setStatus(newStatus);
+                setIsSaving(true);
+                await onUpdate(order.id, newStatus, trackingNumber.trim(), effectiveCarrier, supplierRef.trim());
+                setIsSaving(false);
+                setSavedSuccess(true);
+                setTimeout(() => setSavedSuccess(false), 2500);
+              }}
+              className="text-xs font-black bg-transparent text-gray-900 focus:outline-none cursor-pointer pr-1"
+            >
+              <option value="pending">⏳ Pending (Confirmed)</option>
+              <option value="supplier_ordered">📦 Packed (Meesho)</option>
+              <option value="shipped">🚚 Shipped &amp; In-Transit</option>
+              <option value="out_for_delivery">🛵 Out for Delivery</option>
+              <option value="delivered">✅ Delivered to Doorstep</option>
+              <option value="cancelled">❌ Cancelled</option>
+            </select>
+            {isSaving && <span className="text-[10px] text-gray-400 font-bold animate-pulse">Updating...</span>}
+            {savedSuccess && <span className="text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded font-black">✓ Updated!</span>}
+          </div>
         </div>
 
         <div className="flex items-center gap-4">
@@ -568,7 +587,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [razorpaySecret, setRazorpaySecret] = useState(() => localStorage.getItem('tks_razorpay_key_secret') || '');
   const [savedRzp, setSavedRzp] = useState(false);
 
-  // Derive unique customers from orders
+  // Derive unique customers from real store orders (normalized & accurate)
   const customers = React.useMemo(() => {
     const map = new Map<string, {
       id: string;
@@ -583,8 +602,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }>();
 
     orders.forEach((o) => {
-      const key = (o.customer_phone || o.customer_email || o.customer_name || o.id).trim().toLowerCase();
+      const emailLower = (o.customer_email || '').trim().toLowerCase();
+      const nameLower = (o.customer_name || '').trim().toLowerCase();
+
+      // Filter out admin and test dummy accounts
+      if (
+        emailLower === 'admin@thekeralastore.shop' ||
+        emailLower === 'shopper@example.com' ||
+        emailLower.includes('test@') ||
+        nameLower.includes('administrator') ||
+        nameLower.includes('rohit sharma')
+      ) {
+        return;
+      }
+
+      // Extract 10-digit phone digits for consistent merging across different formats
+      const digits = (o.customer_phone || (o.shipping_address as any)?.phone || '').replace(/\D/g, '').slice(-10);
+      const cleanEmail = emailLower || (o.shipping_address as any)?.email?.trim().toLowerCase() || '';
+      const cleanUserId = (o.user_id || '').trim();
+
+      // Primary grouping key: 10-digit phone > email > user_id > name
+      const key = digits || cleanEmail || cleanUserId || nameLower || o.id;
+      if (!key) return;
+
+      const resolvedName = o.customer_name?.trim() || (o.shipping_address as any)?.fullName?.trim() || 'Customer';
+      const resolvedPhone = digits.length === 10 ? `+91 ${digits}` : (o.customer_phone || '');
       const existing = map.get(key);
+
       if (existing) {
         existing.orderCount += 1;
         existing.totalSpent += (o.total_amount || 0);
@@ -594,13 +638,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         if (new Date(o.created_at) > new Date(existing.lastOrderDate)) {
           existing.lastOrderDate = o.created_at;
           if (o.shipping_address) existing.address = o.shipping_address;
+          if (resolvedName && resolvedName !== 'Customer') existing.name = resolvedName;
+          if (resolvedPhone) existing.phone = resolvedPhone;
+          if (cleanEmail) existing.email = cleanEmail;
         }
       } else {
         map.set(key, {
           id: key,
-          name: o.customer_name || 'Customer',
-          phone: o.customer_phone || '',
-          email: o.customer_email || '',
+          name: resolvedName,
+          phone: resolvedPhone,
+          email: cleanEmail,
           address: o.shipping_address,
           orderCount: 1,
           totalSpent: o.total_amount || 0,
@@ -1486,19 +1533,21 @@ Pincode: ${addr.pincode || ''}`;
                   <p className="text-xl font-extrabold text-gray-900 mt-1">{customers.length}</p>
                 </div>
                 <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Orders</span>
-                  <p className="text-xl font-extrabold text-gray-900 mt-1">{orders.length}</p>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Customer Orders</span>
+                  <p className="text-xl font-extrabold text-gray-900 mt-1">
+                    {customers.reduce((sum, c) => sum + c.orderCount, 0)}
+                  </p>
                 </div>
                 <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Revenue</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Customer Revenue</span>
                   <p className="text-xl font-extrabold text-[#0A5C36] mt-1">
-                    {formatINR(orders.reduce((sum, o) => sum + (o.total_amount || 0), 0))}
+                    {formatINR(customers.reduce((sum, c) => sum + c.totalSpent, 0))}
                   </p>
                 </div>
                 <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Avg Value / Customer</span>
                   <p className="text-xl font-extrabold text-gray-900 mt-1">
-                    {formatINR(customers.length > 0 ? Math.round(orders.reduce((sum, o) => sum + (o.total_amount || 0), 0) / customers.length) : 0)}
+                    {formatINR(customers.length > 0 ? Math.round(customers.reduce((sum, c) => sum + c.totalSpent, 0) / customers.length) : 0)}
                   </p>
                 </div>
               </div>

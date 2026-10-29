@@ -935,7 +935,7 @@ export class StoreService {
   ): Promise<Order | null> {
     const now = new Date().toISOString();
     const orders = await this.getOrders();
-    const target = orders.find((o) => o.id === orderId);
+    const target = orders.find((o) => o.id === orderId || o.order_number === orderId);
     if (!target) return null;
 
     const updatedOrder: Order = {
@@ -947,12 +947,25 @@ export class StoreService {
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       if (client) {
-        await client.from('orders').update({ ...updates, updated_at: now }).eq('id', orderId);
+        try {
+          if (isValidUUID(target.id)) {
+            await client.from('orders').update({ ...updates, updated_at: now }).eq('id', target.id);
+          } else if (target.order_number) {
+            await client.from('orders').update({ ...updates, updated_at: now }).eq('order_number', target.order_number);
+          }
+        } catch (err) {
+          console.warn('Supabase updateOrderStatus error:', err);
+        }
       }
     }
 
-    const all = orders.map((o) => (o.id === orderId ? updatedOrder : o));
-    setLocal(STORAGE_KEYS.ORDERS, all);
+    const currentLocal = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
+    const existsInLocal = currentLocal.some((o) => o.id === target.id || o.order_number === target.order_number);
+    const updatedLocal = existsInLocal
+      ? currentLocal.map((o) => (o.id === target.id || o.order_number === target.order_number ? updatedOrder : o))
+      : [updatedOrder, ...currentLocal];
+    setLocal(STORAGE_KEYS.ORDERS, updatedLocal);
+
     return updatedOrder;
   }
 

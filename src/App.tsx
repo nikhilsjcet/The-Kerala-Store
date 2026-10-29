@@ -58,8 +58,16 @@ const MainApp: React.FC = () => {
   const [infoModalType, setInfoModalType] = useState<string | null>(null);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
 
-  const { isAdmin, isAuthModalOpen, closeAuthModal } = useAuth();
+  const { user, isAdmin, isAuthModalOpen, closeAuthModal } = useAuth();
   const { isCartOpen, setIsCartOpen } = useCart();
+
+  // When user logs out, immediately exit protected/account pages and return to storefront home
+  useEffect(() => {
+    if (!user && (currentPage === 'admin' || currentPage === 'checkout')) {
+      setCurrentPage('home');
+      window.history.pushState({ page: 'home' }, '', '/');
+    }
+  }, [user, currentPage]);
 
   useEffect(() => {
     // Ensure base history entry exists so pressing back doesn't close the site

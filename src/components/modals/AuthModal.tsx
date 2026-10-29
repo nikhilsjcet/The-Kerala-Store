@@ -173,23 +173,6 @@ export const AuthModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Admin link footnote */}
-          <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-            <span>Store Administrator?</span>
-            <a
-              href="/admin"
-              onClick={(e) => {
-                e.preventDefault();
-                closeAuthModal();
-                window.location.href = '/admin';
-              }}
-              className="text-[#0A5C36] font-bold hover:underline flex items-center gap-1"
-            >
-              Admin Portal
-              <ArrowRight className="w-3 h-3" />
-            </a>
-          </div>
-
         </div>
       </div>
     </div>

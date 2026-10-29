@@ -246,8 +246,12 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
                   {user && (
                     <div className="pt-1 border-t border-gray-100">
                       <button
-                        onClick={() => { setShowUserDropdown(false); logout(); }}
-                        className="w-full px-4 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        onClick={() => { 
+                          setShowUserDropdown(false); 
+                          logout(); 
+                          onNavigate('home'); 
+                        }}
+                        className="w-full px-4 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer font-bold"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         Sign Out
