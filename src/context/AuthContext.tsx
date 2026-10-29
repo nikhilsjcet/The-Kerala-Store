@@ -17,7 +17,8 @@ interface AuthContextType {
   signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error: any; data?: any }>;
   signInWithGoogle: () => Promise<{ error?: any; data?: any }>;
   sendEmailOtp: (email: string, fullName?: string, phone?: string) => Promise<{ error: any; data?: any }>;
-  verifyEmailOtp: (email: string, token: string, fullName?: string, phone?: string) => Promise<{ error: any; data?: any }>;
+  verifyEmailOtp: (email: string, token: string, fullName?: string, phone?: string, type?: 'signup' | 'email') => Promise<{ error: any; data?: any }>;
+  resendSignupOtp: (email: string) => Promise<{ error: any; data?: any }>;
   verifyMasterAdminPasscode: (passcode: string) => boolean;
   sendMagicLink?: (email: string) => Promise<{ error: any; data?: any }>;
   resetPassword?: (email: string) => Promise<{ error: any; data?: any }>;
@@ -180,12 +181,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
-  // Verify 6-Digit Email OTP
+  // Verify 6-Digit Email OTP (Supports both signup confirmation and email login OTP)
   const verifyEmailOtp = async (
     email: string,
     token: string,
     fullName?: string,
-    phone?: string
+    phone?: string,
+    type: 'signup' | 'email' = 'signup'
   ): Promise<{ error: any; data?: any }> => {
     const cleanToken = token.trim();
     const cleanEmail = email.trim().toLowerCase();
@@ -194,11 +196,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const client = getSupabaseClient();
       if (client) {
         try {
-          const { data, error } = await client.auth.verifyOtp({
+          // Attempt verification with the requested type ('signup' for email registration)
+          let { data, error } = await client.auth.verifyOtp({
             email: cleanEmail,
             token: cleanToken,
-            type: 'email',
+            type: type,
           });
+
+          // Fallback to 'email' if 'signup' failed (e.g. For magic-link or email-otp users)
+          if (error && type === 'signup') {
+            const fallback = await client.auth.verifyOtp({
+              email: cleanEmail,
+              token: cleanToken,
+              type: 'email',
+            });
+            if (!fallback.error && fallback.data?.user) {
+              data = fallback.data;
+              error = null;
+            }
+          }
 
           if (!error && data?.user) {
             const profile: UserProfile = {
@@ -224,6 +240,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' }, data: null };
+  };
+
+  // Resend 6-Digit Signup Confirmation OTP
+  const resendSignupOtp = async (email: string): Promise<{ error: any; data?: any }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (isSupabaseConfigured()) {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { data, error } = await client.auth.resend({
+            type: 'signup',
+            email: cleanEmail,
+            options: {
+              emailRedirectTo: window.location.origin,
+            },
+          });
+          return { data, error };
+        } catch (err: any) {
+          return { error: err };
+        }
+      }
+    }
+    return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
   // Verify Master Store Passcode for Admin Gate
@@ -380,6 +419,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         sendEmailOtp,
         verifyEmailOtp,
+        resendSignupOtp,
         verifyMasterAdminPasscode,
         sendMagicLink,
         resetPassword,
