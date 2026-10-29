@@ -217,8 +217,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sum + itemPrice * item.quantity;
   }, 0);
 
-  const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : STANDARD_SHIPPING_FEE;
-  const freeShippingRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  // Delivery fee is based strictly on product settings (0 = Free Delivery). No arbitrary surcharges added.
+  const shippingFee = cart.length === 0 ? 0 : cart.reduce(
+    (max, item) => Math.max(max, Number(item.product.delivery_charge || 0)), 
+    0
+  );
+  const freeShippingRemaining = 0;
 
   const applyDiscount = async (code: string): Promise<boolean> => {
     if (!code.trim()) {

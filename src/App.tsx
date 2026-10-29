@@ -28,7 +28,7 @@ const getInitialPage = (): 'home' | 'shop' | 'product-details' | 'checkout' | 'o
   const search = window.location.search.toLowerCase();
   const hash = window.location.hash.toLowerCase();
 
-  if (path === '/admin' || path.startsWith('/admin') || search.includes('page=admin') || hash === '#admin') {
+  if (path === '/nikhil' || path.startsWith('/nikhil') || search.includes('page=nikhil') || hash === '#nikhil') {
     return 'admin';
   }
   if (path === '/orders' || search.includes('page=orders') || hash === '#orders') {
@@ -144,7 +144,7 @@ const MainApp: React.FC = () => {
       window.history.pushState({ page: 'wishlist' }, '', '/wishlist');
       setCurrentPage('wishlist');
     } else if (page === 'admin') {
-      window.history.pushState({ page: 'admin' }, '', '/admin');
+      window.history.pushState({ page: 'admin' }, '', '/nikhil');
       setCurrentPage('admin');
     }
   };

@@ -132,7 +132,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
       }
 
       const verifiedSubtotal = validation.verifiedSubtotal;
-      const verifiedShipping = verifiedSubtotal >= 999 ? 0 : 99;
+      // Delivery fee based directly on product settings. No arbitrary surcharges added.
+      const verifiedShipping = validation.verifiedCart.reduce(
+        (max, item) => Math.max(max, Number(item.product.delivery_charge || 0)), 
+        0
+      );
       let verifiedDiscount = 0;
       if (discountCode) {
         const valRes = await StoreService.validateDiscount(discountCode, verifiedSubtotal);

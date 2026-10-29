@@ -134,13 +134,14 @@ describe('TheKeralaStore Authentication, Cart & Order Scoping Tests', () => {
 
   // 6. Master Admin Passcode Verification
   test('Master admin passcode grants access to Store Administrator role', () => {
-    const MASTER_ADMIN_PASSCODE = 'Kerala@2026';
+    const MASTER_ADMIN_PASSCODE = 'kinnan123';
     const verifyPasscode = (code) => code.trim() === MASTER_ADMIN_PASSCODE;
 
-    assert.equal(verifyPasscode('Kerala@2026'), true);
-    assert.equal(verifyPasscode('  Kerala@2026  '), true);
+    assert.equal(verifyPasscode('kinnan123'), true);
+    assert.equal(verifyPasscode('  kinnan123  '), true);
     assert.equal(verifyPasscode('wrong-code'), false);
     assert.equal(verifyPasscode('admin123'), false);
+    assert.equal(verifyPasscode('Kerala@2026'), false);
   });
 
   // 7. Adding to cart never creates an order
@@ -213,6 +214,28 @@ describe('TheKeralaStore Authentication, Cart & Order Scoping Tests', () => {
     assert.equal(anjali.orderCount, 2, 'Two orders with differing phone format merged into 1 customer');
     assert.equal(anjali.totalSpent, 2000, 'Total spent summed accurately');
     assert.equal(result.some((c) => c.name === 'Rohit Sharma'), false, 'Dummy accounts filtered');
+  });
+
+  // 9. Product-specific delivery charges (no arbitrary extra fees)
+  test('Delivery fee uses product-defined rate without arbitrary flat shipping surcharge', () => {
+    function computeDeliveryCharge(cart) {
+      if (!cart || cart.length === 0) return 0;
+      return cart.reduce((max, item) => Math.max(max, Number(item.product.delivery_charge || 0)), 0);
+    }
+
+    // Free delivery items
+    const freeCart = [
+      { product: { id: 'p1', title: 'Spice Box', delivery_charge: 0 } },
+      { product: { id: 'p2', title: 'Banana Chips', delivery_charge: 0 } },
+    ];
+    assert.equal(computeDeliveryCharge(freeCart), 0, 'Should be 0 if all products have 0 delivery charge');
+
+    // Product with specific delivery charge
+    const chargedCart = [
+      { product: { id: 'p1', title: 'Heavy Ceramic Uruli', delivery_charge: 60 } },
+      { product: { id: 'p2', title: 'Banana Chips', delivery_charge: 0 } },
+    ];
+    assert.equal(computeDeliveryCharge(chargedCart), 60, 'Should apply product delivery charge without adding arbitrary fee');
   });
 
 });

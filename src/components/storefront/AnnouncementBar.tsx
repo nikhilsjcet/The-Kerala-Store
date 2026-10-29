@@ -11,11 +11,10 @@ export const AnnouncementBar: React.FC<AnnouncementBarProps> = ({ onOpenInfoModa
     <div className="bg-[#0B4628] text-white text-xs sm:text-sm font-medium py-2 px-4 transition-colors select-none">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         
-        {/* Left: Free Doorstep Delivery Across Kerala & India */}
+        {/* Left: Plain Storefront Header Text */}
         <div className="flex items-center space-x-2 text-white">
-          <Truck className="w-4 h-4 text-emerald-300 shrink-0" />
-          <span className="tracking-normal font-normal text-xs sm:text-sm">
-            Free Doorstep Delivery Across <strong className="font-semibold text-white">Kerala &amp; All India</strong>
+          <span className="tracking-normal font-medium text-xs sm:text-sm text-white/95">
+            The Kerala Store — Curated Kerala Lifestyle &amp; Useful Products
           </span>
         </div>
 

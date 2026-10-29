@@ -270,21 +270,23 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                 {product.title}
               </h1>
 
-              {/* Rating & Reviews */}
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="flex items-center text-amber-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'fill-amber-400' : 'text-gray-300'}`}
-                    />
-                  ))}
-                </div>
-                <span className="text-xs font-bold text-gray-800">{product.rating.toFixed(1)}</span>
-                <span className="text-xs text-gray-400 font-medium">({product.review_count} customer reviews)</span>
-                <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
-                  Verified Dropship Sourcing
+              {/* Delivery info & Verified badge */}
+              <div className="flex items-center space-x-3 mb-4 flex-wrap gap-y-2">
+                <span className="text-xs text-emerald-800 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
+                  <Truck className="w-3.5 h-3.5 text-[#0A5C36]" />
+                  {product.delivery_charge && product.delivery_charge > 0 
+                    ? `Delivery: ₹${product.delivery_charge}` 
+                    : 'Free Doorstep Delivery'}
                 </span>
+                {product.customer_reviews && product.customer_reviews.length > 0 ? (
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span className="font-bold text-gray-800">{product.rating.toFixed(1)}</span>
+                    <span className="text-gray-400">({product.customer_reviews.length} reviews)</span>
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-gray-400">New Verified Product</span>
+                )}
               </div>
 
               {/* Price Banner in INR */}
@@ -465,7 +467,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                 activeTab === 'reviews' ? 'border-[#0A5C36] text-[#0A5C36]' : 'border-transparent text-gray-500 hover:text-gray-800'
               }`}
             >
-              Customer Reviews ({product.review_count})
+              Customer Reviews ({product.customer_reviews?.length || 0})
             </button>
           </div>
 
@@ -499,62 +501,41 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
 
             {activeTab === 'reviews' && (
               <div className="space-y-4">
-                {(product.customer_reviews && product.customer_reviews.length > 0 ? product.customer_reviews : [
-                  {
-                    id: 'rev-1',
-                    author: 'Ananthakrishnan Nair',
-                    location: 'Kottayam, Kerala',
-                    rating: 5,
-                    date: '3 days ago',
-                    comment: 'Super fast delivery! Received the product in pristine packaging in 2 days. Build quality is top-notch.',
-                    verified_purchase: true,
-                  },
-                  {
-                    id: 'rev-2',
-                    author: 'Pooja Sharma',
-                    location: 'Bengaluru, Karnataka',
-                    rating: 5,
-                    date: '1 week ago',
-                    comment: 'Exceptional value for money. Better price than typical retailers and COD worked smoothly.',
-                    verified_purchase: true,
-                  },
-                  {
-                    id: 'rev-3',
-                    author: 'Athira Prasad',
-                    location: 'Kochi, Kerala',
-                    rating: 5,
-                    date: '2 weeks ago',
-                    comment: 'Loved the product! Exactly as described in photos and arrived ahead of schedule.',
-                    verified_purchase: true,
-                  }
-                ]).map((rev) => (
-                  <div key={rev.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100/80">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold text-gray-800">{rev.author}</p>
-                          {rev.verified_purchase && (
-                            <span className="text-[10px] bg-emerald-100 text-[#0A5C36] font-bold px-2 py-0.5 rounded-full">
-                              Verified Buyer
-                            </span>
-                          )}
+                {product.customer_reviews && product.customer_reviews.length > 0 ? (
+                  product.customer_reviews.map((rev) => (
+                    <div key={rev.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100/80">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-gray-800">{rev.author}</p>
+                            {rev.verified_purchase && (
+                              <span className="text-[10px] bg-emerald-100 text-[#0A5C36] font-bold px-2 py-0.5 rounded-full">
+                                Verified Buyer
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-gray-400">{rev.location} {rev.date ? `• ${rev.date}` : ''}</p>
                         </div>
-                        <p className="text-[11px] text-gray-400">{rev.location} {rev.date ? `• ${rev.date}` : ''}</p>
+                        <div className="flex text-amber-400">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-3.5 h-3.5 ${i < rev.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} 
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex text-amber-400">
-                        {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i} 
-                            className={`w-3.5 h-3.5 ${i < rev.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} 
-                          />
-                        ))}
-                      </div>
+                      <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                        {rev.comment}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-600 mt-2 leading-relaxed">
-                      {rev.comment}
-                    </p>
+                  ))
+                ) : (
+                  <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                    <p className="text-sm font-semibold text-gray-700">No customer reviews yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Verified customers will be invited to leave an honest review after delivery.</p>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>

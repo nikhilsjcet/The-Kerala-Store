@@ -29,19 +29,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     slug: '',
     short_description: '',
     description: '',
-    images: ['https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=800&q=80'],
-    price: 999,
-    original_price: 1499,
+    images: [],
+    price: 0,
+    original_price: undefined,
+    delivery_charge: 0,
     category_id: categories[0]?.id || '',
     sku: '',
-    stock_quantity: 50,
+    stock_quantity: 10,
     is_featured: false,
     is_trending: false,
-    is_new_arrival: true,
+    is_new_arrival: false,
     is_on_sale: false,
     status: 'published',
-    supplier_name: 'Shenzhen Apex Electronics Co.',
-    supplier_cost: 500,
+    supplier_name: '',
+    supplier_cost: undefined,
     supplier_url: '',
     supplier_sku: '',
     processing_time_days: 2,
@@ -83,19 +84,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         slug: '',
         short_description: '',
         description: '',
-        images: ['https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=800&q=80'],
-        price: 999,
-        original_price: 1499,
+        images: [],
+        price: 0,
+        original_price: undefined,
+        delivery_charge: 0,
         category_id: categories[0]?.id || '',
-        sku: `TKS-${Math.floor(1000 + Math.random() * 9000)}`,
-        stock_quantity: 50,
+        sku: '',
+        stock_quantity: 10,
         is_featured: false,
         is_trending: false,
-        is_new_arrival: true,
+        is_new_arrival: false,
         is_on_sale: false,
         status: 'published',
-        supplier_name: suppliers[0]?.name || 'Direct Wholesale Partner',
-        supplier_cost: 500,
+        supplier_name: '',
+        supplier_cost: undefined,
         supplier_url: '',
         supplier_sku: '',
         processing_time_days: 2,
@@ -210,7 +212,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Selling Price (INR) *</label>
                 <input
@@ -218,7 +220,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                   name="price"
                   required
                   min={1}
-                  value={formData.price}
+                  placeholder="e.g. 499"
+                  value={formData.price || ''}
                   onChange={handleChange}
                   className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0A5C36] font-semibold text-[#0A5C36]"
                 />
@@ -229,10 +232,25 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 <input
                   type="number"
                   name="original_price"
+                  placeholder="e.g. 999"
                   value={formData.original_price || ''}
                   onChange={handleChange}
                   className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0A5C36]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Delivery Charge (INR)</label>
+                <input
+                  type="number"
+                  name="delivery_charge"
+                  min={0}
+                  placeholder="0 for Free Delivery"
+                  value={formData.delivery_charge ?? 0}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0A5C36] font-medium"
+                />
+                <span className="text-[10px] text-gray-400">0 = Free Doorstep Delivery</span>
               </div>
 
               <div>

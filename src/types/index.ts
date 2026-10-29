@@ -56,6 +56,7 @@ export interface Product {
   supplier_order_ref?: string;
 
   // Additional details
+  delivery_charge?: number; // Custom delivery fee in INR (0 = Free Delivery)
   rating: number;
   review_count: number;
   customer_reviews?: ProductReview[];

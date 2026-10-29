@@ -32,7 +32,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY_USER = 'thekeralastore_current_user';
 
-export const MASTER_ADMIN_PASSCODE = 'Kerala@2026';
+export const MASTER_ADMIN_PASSCODE = 'kinnan123';
 
 const DEFAULT_ADMIN: UserProfile = {
   id: 'usr-admin-1',
