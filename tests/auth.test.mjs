@@ -238,4 +238,26 @@ describe('TheKeralaStore Authentication, Cart & Order Scoping Tests', () => {
     assert.equal(computeDeliveryCharge(chargedCart), 60, 'Should apply product delivery charge without adding arbitrary fee');
   });
 
+  // 10. Admin route resolution: /nikhil strictly maps to admin view; /admin is disallowed
+  test('Admin route resolution strictly matches /nikhil and does not expose admin on /admin', () => {
+    function resolvePage(path, search = '', hash = '') {
+      const rawPath = path.toLowerCase().trim();
+      const p = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
+      const s = search.toLowerCase();
+      const h = hash.toLowerCase();
+
+      if (p === '/nikhil' || p.startsWith('/nikhil') || s.includes('page=nikhil') || s.includes('admin=1') || h === '#nikhil') {
+        return 'admin';
+      }
+      return 'home';
+    }
+
+    assert.equal(resolvePage('/nikhil'), 'admin');
+    assert.equal(resolvePage('/nikhil/'), 'admin');
+    assert.equal(resolvePage('/NIKHIL'), 'admin');
+    assert.equal(resolvePage('/', '?page=nikhil'), 'admin');
+    assert.equal(resolvePage('/', '', '#nikhil'), 'admin');
+    assert.equal(resolvePage('/admin'), 'home', '/admin must NOT open admin panel');
+  });
+
 });

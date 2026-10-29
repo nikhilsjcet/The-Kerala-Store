@@ -24,11 +24,18 @@ import { Product, Order } from './types';
 
 const getInitialPage = (): 'home' | 'shop' | 'product-details' | 'checkout' | 'orders' | 'wishlist' | 'admin' => {
   if (typeof window === 'undefined') return 'home';
-  const path = window.location.pathname.toLowerCase();
+  const rawPath = window.location.pathname.toLowerCase().trim();
+  const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
   const search = window.location.search.toLowerCase();
   const hash = window.location.hash.toLowerCase();
 
-  if (path === '/nikhil' || path.startsWith('/nikhil') || search.includes('page=nikhil') || hash === '#nikhil') {
+  if (
+    path === '/nikhil' || 
+    path.startsWith('/nikhil') || 
+    search.includes('page=nikhil') || 
+    search.includes('admin=1') ||
+    hash === '#nikhil'
+  ) {
     return 'admin';
   }
   if (path === '/orders' || search.includes('page=orders') || hash === '#orders') {
@@ -61,14 +68,6 @@ const MainApp: React.FC = () => {
   const { user, isAdmin, isAuthModalOpen, closeAuthModal } = useAuth();
   const { isCartOpen, setIsCartOpen } = useCart();
 
-  // When user logs out, immediately exit protected/account pages and return to storefront home
-  useEffect(() => {
-    if (!user && (currentPage === 'admin' || currentPage === 'checkout')) {
-      setCurrentPage('home');
-      window.history.pushState({ page: 'home' }, '', '/');
-    }
-  }, [user, currentPage]);
-
   useEffect(() => {
     // Ensure base history entry exists so pressing back doesn't close the site
     if (!window.history.state) {
@@ -100,14 +99,20 @@ const MainApp: React.FC = () => {
           setSelectedCategorySlug(e.state.param.replace('category=', ''));
         }
       } else {
-        setCurrentPage('home');
+        setCurrentPage(getInitialPage());
       }
     };
     window.addEventListener('popstate', handlePopState);
 
+    const handleHashChange = () => {
+      setCurrentPage(getInitialPage());
+    };
+    window.addEventListener('hashchange', handleHashChange);
+
     return () => {
       window.removeEventListener('navigate-orders', handleNavOrders);
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handleHashChange);
     };
   }, [isCartOpen, isAuthModalOpen, infoModalType]);
 

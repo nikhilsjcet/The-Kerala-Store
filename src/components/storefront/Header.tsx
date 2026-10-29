@@ -339,7 +339,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
             <div className="px-3 py-2 bg-stone-50 rounded-xl flex items-center justify-between text-xs">
               <span className="font-semibold text-gray-700 truncate max-w-[180px]">{user.full_name}</span>
               <button
-                onClick={() => { setMobileMenuOpen(false); logout(); }}
+                onClick={() => { setMobileMenuOpen(false); logout(); onNavigate('home'); }}
                 className="text-red-600 font-bold hover:underline"
               >
                 Sign Out
