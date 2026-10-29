@@ -141,6 +141,17 @@ CREATE TABLE IF NOT EXISTS public.order_items (
     total_price NUMERIC(10,2) NOT NULL
 );
 
+-- 8b. Create Registered Store Customers Table
+CREATE TABLE IF NOT EXISTS public.customers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email TEXT NOT NULL UNIQUE,
+    full_name TEXT,
+    phone TEXT,
+    avatar_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    last_sign_in_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 9. Row Level Security (RLS) Configuration
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
@@ -149,6 +160,7 @@ ALTER TABLE public.suppliers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.discounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read of active categories
 CREATE POLICY "Public read active categories" ON public.categories
@@ -193,6 +205,7 @@ CREATE POLICY "Public full suppliers" ON public.suppliers FOR ALL USING (true) W
 CREATE POLICY "Public full discounts" ON public.discounts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public full orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public full order items" ON public.order_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full customers" ON public.customers FOR ALL USING (true) WITH CHECK (true);
 
 -- Drop old deprecated categories if any exist from earlier draft schema
 DELETE FROM public.categories WHERE slug IN ('computers', 'mobile', 'drones-cameras', 'tablets', 'best-quality', 'tv-home-cinema', 'wearable-tech', 'audio');

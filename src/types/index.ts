@@ -181,3 +181,14 @@ export interface UserProfile {
   created_at: string;
 }
 
+export interface RegisteredCustomer {
+  id: string;
+  email: string;
+  full_name?: string;
+  phone?: string;
+  avatar_url?: string;
+  created_at: string;
+  last_sign_in_at?: string;
+  source?: 'google' | 'email' | 'checkout';
+}
+

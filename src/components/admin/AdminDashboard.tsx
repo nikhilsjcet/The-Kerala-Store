@@ -9,7 +9,8 @@ import {
   Order, 
   Supplier, 
   DiscountCode, 
-  FulfilmentStatus 
+  FulfilmentStatus,
+  RegisteredCustomer
 } from '../../types';
 import { formatINR, formatDateTime, getCourierTrackingUrl } from '../../lib/utils';
 import { isSupabaseConfigured } from '../../lib/supabase';
@@ -43,6 +44,7 @@ import {
   CheckCircle,
   Copy,
   Sparkles,
+  RefreshCw,
   Users,
   Phone,
   MapPin,
@@ -555,6 +557,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [registeredCustomers, setRegisteredCustomers] = useState<RegisteredCustomer[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [discounts, setDiscounts] = useState<DiscountCode[]>([]);
 
@@ -587,7 +590,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [razorpaySecret, setRazorpaySecret] = useState(() => localStorage.getItem('tks_razorpay_key_secret') || '');
   const [savedRzp, setSavedRzp] = useState(false);
 
-  // Derive unique customers from real store orders (normalized & accurate)
+  // Derive unique customers from registered members + real store orders
   const customers = React.useMemo(() => {
     const map = new Map<string, {
       id: string;
@@ -598,9 +601,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       orderCount: number;
       totalSpent: number;
       lastOrderDate: string;
+      joinedDate?: string;
       orderNumbers: string[];
+      isRegistered?: boolean;
     }>();
 
+    // 1. Seed with registered Google / store account holders
+    registeredCustomers.forEach((rc) => {
+      const emailLower = (rc.email || '').trim().toLowerCase();
+      const nameLower = (rc.full_name || '').trim().toLowerCase();
+      if (
+        !emailLower ||
+        emailLower === 'admin@thekeralastore.shop' ||
+        emailLower === 'shopper@example.com' ||
+        emailLower.includes('admin@') ||
+        nameLower.includes('administrator') ||
+        nameLower.includes('rohit sharma')
+      ) {
+        return;
+      }
+
+      const digits = (rc.phone || '').replace(/\D/g, '').slice(-10);
+      const key = digits || emailLower || rc.id;
+      if (!key) return;
+
+      map.set(key, {
+        id: key,
+        name: rc.full_name?.trim() || emailLower.split('@')[0],
+        phone: digits.length === 10 ? `+91 ${digits}` : (rc.phone || ''),
+        email: emailLower,
+        address: undefined,
+        orderCount: 0,
+        totalSpent: 0,
+        lastOrderDate: rc.created_at,
+        joinedDate: rc.created_at,
+        orderNumbers: [],
+        isRegistered: true,
+      });
+    });
+
+    // 2. Merge with real store orders
     orders.forEach((o) => {
       const emailLower = (o.customer_email || '').trim().toLowerCase();
       const nameLower = (o.customer_name || '').trim().toLowerCase();
@@ -627,7 +667,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       const resolvedName = o.customer_name?.trim() || (o.shipping_address as any)?.fullName?.trim() || 'Customer';
       const resolvedPhone = digits.length === 10 ? `+91 ${digits}` : (o.customer_phone || '');
-      const existing = map.get(key);
+      const existing = map.get(key) || (cleanEmail ? map.get(cleanEmail) : undefined) || (digits ? map.get(digits) : undefined);
 
       if (existing) {
         existing.orderCount += 1;
@@ -652,7 +692,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           orderCount: 1,
           totalSpent: o.total_amount || 0,
           lastOrderDate: o.created_at,
+          joinedDate: o.created_at,
           orderNumbers: [o.order_number],
+          isRegistered: false,
         });
       }
     });
@@ -660,7 +702,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return Array.from(map.values()).sort(
       (a, b) => new Date(b.lastOrderDate).getTime() - new Date(a.lastOrderDate).getTime()
     );
-  }, [orders]);
+  }, [orders, registeredCustomers]);
 
   const filteredCustomers = React.useMemo(() => {
     const q = searchCustomer.trim().toLowerCase();
@@ -704,12 +746,13 @@ Pincode: ${addr.pincode || ''}`;
 
   const loadAllAdminData = async () => {
     try {
-      const [prodsRes, catsRes, ordsRes, supsRes, discsRes] = await Promise.allSettled([
+      const [prodsRes, catsRes, ordsRes, supsRes, discsRes, custsRes] = await Promise.allSettled([
         StoreService.getAllAdminProducts(),
         StoreService.getAllCategories(),
         StoreService.getOrders(),
         StoreService.getSuppliers(),
         StoreService.getDiscounts(),
+        StoreService.getRegisteredCustomers(),
       ]);
 
       if (prodsRes.status === 'fulfilled') setProducts(prodsRes.value);
@@ -717,6 +760,7 @@ Pincode: ${addr.pincode || ''}`;
       if (ordsRes.status === 'fulfilled') setOrders(ordsRes.value);
       if (supsRes.status === 'fulfilled') setSuppliers(supsRes.value);
       if (discsRes.status === 'fulfilled') setDiscounts(discsRes.value);
+      if (custsRes.status === 'fulfilled') setRegisteredCustomers(custsRes.value);
 
       try {
         const an = await StoreService.getAnalytics();
@@ -1514,15 +1558,28 @@ Pincode: ${addr.pincode || ''}`;
                   </p>
                 </div>
 
-                <div className="relative w-full sm:w-72">
-                  <input
-                    type="text"
-                    placeholder="Search name, phone, city..."
-                    value={searchCustomer}
-                    onChange={(e) => setSearchCustomer(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#0A5C36]"
-                  />
-                  <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-72">
+                    <input
+                      type="text"
+                      placeholder="Search name, phone, city..."
+                      value={searchCustomer}
+                      onChange={(e) => setSearchCustomer(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#0A5C36]"
+                    />
+                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const res = await StoreService.getRegisteredCustomers();
+                      setRegisteredCustomers(res);
+                      showNotification('Refreshed customer list from database!');
+                    }}
+                    className="p-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl text-gray-600 hover:text-[#0A5C36] transition-colors cursor-pointer"
+                    title="Refresh Customers"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
@@ -1573,13 +1630,19 @@ Pincode: ${addr.pincode || ''}`;
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-extrabold text-gray-900 text-sm">{cust.name}</h3>
-                              <span className="text-[10px] font-bold bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
-                                {cust.orderCount} {cust.orderCount === 1 ? 'order' : 'orders'}
-                              </span>
+                              {cust.orderCount > 0 ? (
+                                <span className="text-[10px] font-bold bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                                  {cust.orderCount} {cust.orderCount === 1 ? 'order' : 'orders'}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold bg-emerald-100 text-[#0A5C36] px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3 text-[#0A5C36]" /> Registered Member
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs text-gray-600 flex items-center gap-2">
-                              <span>📞 {cust.phone || 'No phone'}</span>
-                              {cust.email && <span>• ✉️ {cust.email}</span>}
+                              {cust.phone ? <span>📞 {cust.phone}</span> : null}
+                              {cust.email && <span>{cust.phone ? '• ' : ''}✉️ {cust.email}</span>}
                             </p>
                             {cust.address && (
                               <p className="text-[11px] text-gray-500 flex items-center gap-1">
@@ -1590,7 +1653,11 @@ Pincode: ${addr.pincode || ''}`;
                               </p>
                             )}
                             <p className="text-[10px] text-gray-400">
-                              Latest Order: {formatDateTime(cust.lastOrderDate)} ({cust.orderNumbers.join(', ')})
+                              {cust.orderCount > 0 ? (
+                                <>Latest Order: {formatDateTime(cust.lastOrderDate)} ({cust.orderNumbers.join(', ')})</>
+                              ) : (
+                                <>Registered: {formatDateTime(cust.joinedDate || cust.lastOrderDate)} (No orders placed yet)</>
+                              )}
                             </p>
                           </div>
                         </div>

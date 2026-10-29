@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
+import { StoreService } from '../services/storeService';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -153,6 +154,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(profile);
             closeAuthModal();
 
+            // Auto-sync registered customer to store database and customer list
+            if (profile.role !== 'admin' && profile.email) {
+              StoreService.saveRegisteredCustomer({
+                id: session.user.id,
+                email: session.user.email,
+                full_name: resolvedName,
+                phone: meta.phone || session.user.phone || '',
+                avatar_url: meta.avatar_url || meta.picture || '',
+                created_at: session.user.created_at,
+                source: 'google',
+              }).catch(() => {});
+            }
+
             // Clean up hash fragments if returning from OAuth
             if (window.location.hash.includes('access_token')) {
               window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -175,6 +189,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
             setUser(profile);
             closeAuthModal();
+
+            // Auto-sync registered customer to store database and customer list
+            if (profile.role !== 'admin' && profile.email) {
+              StoreService.saveRegisteredCustomer({
+                id: session.user.id,
+                email: session.user.email,
+                full_name: resolvedName,
+                phone: meta.phone || session.user.phone || '',
+                avatar_url: meta.avatar_url || meta.picture || '',
+                created_at: session.user.created_at,
+                source: 'google',
+              }).catch(() => {});
+            }
 
             if (window.location.hash.includes('access_token')) {
               window.history.replaceState(null, '', window.location.pathname + window.location.search);

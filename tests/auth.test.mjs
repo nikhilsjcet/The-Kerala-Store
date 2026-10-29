@@ -260,4 +260,58 @@ describe('TheKeralaStore Authentication, Cart & Order Scoping Tests', () => {
     assert.equal(resolvePage('/admin'), 'home', '/admin must NOT open admin panel');
   });
 
+  // 11. Registered Google customers sync and appearance in admin dashboard customer list
+  test('Registered Google customers without orders are included in admin customer list with 0 orders', () => {
+    function deriveCustomers(orders, registeredCustomers) {
+      const map = new Map();
+
+      // Seed with registered Google members
+      registeredCustomers.forEach((rc) => {
+        const emailLower = (rc.email || '').trim().toLowerCase();
+        if (!emailLower || emailLower === 'admin@thekeralastore.shop') return;
+        map.set(emailLower, {
+          name: rc.full_name,
+          email: emailLower,
+          phone: rc.phone || '',
+          orderCount: 0,
+          totalSpent: 0,
+          isRegistered: true,
+        });
+      });
+
+      // Merge orders
+      orders.forEach((o) => {
+        const emailLower = (o.customer_email || '').trim().toLowerCase();
+        if (!emailLower) return;
+        const existing = map.get(emailLower);
+        if (existing) {
+          existing.orderCount += 1;
+          existing.totalSpent += o.total_amount;
+        } else {
+          map.set(emailLower, {
+            name: o.customer_name,
+            email: emailLower,
+            phone: o.customer_phone || '',
+            orderCount: 1,
+            totalSpent: o.total_amount,
+            isRegistered: false,
+          });
+        }
+      });
+
+      return Array.from(map.values());
+    }
+
+    const registered = [
+      { id: 'usr-1', email: 'nikhil.user@gmail.com', full_name: 'Nikhil Google Shopper', phone: '+91 9447000000' }
+    ];
+    const emptyOrders = [];
+
+    const result = deriveCustomers(emptyOrders, registered);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].email, 'nikhil.user@gmail.com');
+    assert.equal(result[0].orderCount, 0, 'New registered customer shows in list before placing any orders');
+    assert.equal(result[0].totalSpent, 0);
+  });
+
 });

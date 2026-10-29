@@ -6,7 +6,8 @@ import {
   DiscountCode, 
   Order, 
   FulfilmentStatus, 
-  PaymentStatus 
+  PaymentStatus,
+  RegisteredCustomer
 } from '../types';
 import { 
   INITIAL_CATEGORIES, 
@@ -22,6 +23,7 @@ const STORAGE_KEYS = {
   SUPPLIERS: 'tks_suppliers_v2',
   DISCOUNTS: 'tks_discounts_v2',
   ORDERS: 'tks_orders_v2',
+  CUSTOMERS: 'tks_registered_customers_v2',
 };
 
 export function isValidUUID(str: any): boolean {
@@ -1000,6 +1002,161 @@ export class StoreService {
       totalProducts: products.length,
       publishedProducts: products.filter((p) => p.status === 'published').length,
     };
+  }
+
+  // ==========================================
+  // REGISTERED CUSTOMERS (Google / Auth / Checkout)
+  // ==========================================
+  static async saveRegisteredCustomer(cust: Partial<RegisteredCustomer>): Promise<void> {
+    if (!cust || !cust.email) return;
+    const cleanEmail = cust.email.trim().toLowerCase();
+    
+    // Ignore internal admin accounts
+    if (
+      cleanEmail === 'admin@thekeralastore.shop' ||
+      cleanEmail === 'shopper@example.com' ||
+      cleanEmail.includes('admin@') ||
+      cust.full_name?.toLowerCase().includes('administrator')
+    ) {
+      return;
+    }
+
+    const customerRecord: RegisteredCustomer = {
+      id: cust.id || `cust-${Date.now()}`,
+      email: cleanEmail,
+      full_name: cust.full_name?.trim() || cleanEmail.split('@')[0],
+      phone: cust.phone?.trim() || '',
+      avatar_url: cust.avatar_url || '',
+      created_at: cust.created_at || new Date().toISOString(),
+      last_sign_in_at: new Date().toISOString(),
+      source: cust.source || 'google',
+    };
+
+    // 1. If Supabase is connected, upsert into customers table
+    if (isSupabaseConfigured()) {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const payload: any = {
+            email: customerRecord.email,
+            full_name: customerRecord.full_name,
+            phone: customerRecord.phone || null,
+            avatar_url: customerRecord.avatar_url || null,
+            created_at: customerRecord.created_at,
+            last_sign_in_at: customerRecord.last_sign_in_at,
+          };
+          if (isValidUUID(customerRecord.id)) {
+            payload.id = customerRecord.id;
+          }
+
+          const { error } = await client.from('customers').upsert(payload, { onConflict: 'email' });
+          if (error) {
+            // If table doesn't exist, try 'profiles' table
+            if (error.code === '42P01' || error.message?.includes('does not exist')) {
+              try {
+                await client.from('profiles').upsert(payload, { onConflict: 'email' });
+              } catch {}
+            }
+          }
+        } catch (dbErr) {
+          console.warn('Could not sync customer to Supabase:', dbErr);
+        }
+      }
+    }
+
+    // 2. Always persist into localStorage as fallback / instant cache
+    if (typeof window !== 'undefined') {
+      try {
+        const existing: RegisteredCustomer[] = getLocal(STORAGE_KEYS.CUSTOMERS, []);
+        const idx = existing.findIndex((c) => c.email.toLowerCase() === cleanEmail);
+        if (idx >= 0) {
+          existing[idx] = { ...existing[idx], ...customerRecord };
+        } else {
+          existing.unshift(customerRecord);
+        }
+        setLocal(STORAGE_KEYS.CUSTOMERS, existing);
+      } catch (lsErr) {
+        console.error('Error saving customer locally:', lsErr);
+      }
+    }
+  }
+
+  static async getRegisteredCustomers(): Promise<RegisteredCustomer[]> {
+    let list: RegisteredCustomer[] = [];
+
+    // 1. Try Supabase first if configured
+    if (isSupabaseConfigured()) {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { data, error } = await client
+            .from('customers')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (!error && Array.isArray(data)) {
+            list = data.map((d: any) => ({
+              id: d.id,
+              email: d.email,
+              full_name: d.full_name || d.name || d.email?.split('@')[0],
+              phone: d.phone || '',
+              avatar_url: d.avatar_url || '',
+              created_at: d.created_at || d.inserted_at || new Date().toISOString(),
+              last_sign_in_at: d.last_sign_in_at,
+              source: 'google',
+            }));
+          } else {
+            // Try fallback table 'profiles'
+            const profRes = await client.from('profiles').select('*');
+            if (!profRes.error && Array.isArray(profRes.data)) {
+              list = profRes.data.map((d: any) => ({
+                id: d.id,
+                email: d.email,
+                full_name: d.full_name || d.name || d.email?.split('@')[0],
+                phone: d.phone || '',
+                avatar_url: d.avatar_url || '',
+                created_at: d.created_at || new Date().toISOString(),
+                last_sign_in_at: d.last_sign_in_at,
+                source: 'google',
+              }));
+            }
+          }
+        } catch (dbErr) {
+          console.warn('Error reading customers from Supabase:', dbErr);
+        }
+      }
+    }
+
+    // 2. Merge with local storage fallback
+    if (typeof window !== 'undefined') {
+      const localList: RegisteredCustomer[] = getLocal(STORAGE_KEYS.CUSTOMERS, []);
+      const map = new Map<string, RegisteredCustomer>();
+      list.forEach((c) => {
+        const email = (c.email || '').trim().toLowerCase();
+        if (email) map.set(email, c);
+      });
+      localList.forEach((c) => {
+        const email = (c.email || '').trim().toLowerCase();
+        if (email && !map.has(email)) {
+          map.set(email, c);
+        }
+      });
+      list = Array.from(map.values());
+    }
+
+    // Filter out dummy/admin accounts
+    return list.filter((c) => {
+      const em = (c.email || '').trim().toLowerCase();
+      const fn = (c.full_name || '').trim().toLowerCase();
+      return (
+        em &&
+        em !== 'admin@thekeralastore.shop' &&
+        em !== 'shopper@example.com' &&
+        !em.includes('admin@') &&
+        !fn.includes('administrator') &&
+        !fn.includes('rohit sharma')
+      );
+    });
   }
 
   // Reset to initial seed data
