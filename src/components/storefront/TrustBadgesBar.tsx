@@ -15,7 +15,7 @@ export const TrustBadgesBar: React.FC = () => {
                 Free Shipping
               </h4>
               <p className="text-[11px] text-gray-500 truncate">
-                On orders over ₹499
+                On all doorstep orders
               </p>
             </div>
           </div>

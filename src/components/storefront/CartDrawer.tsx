@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Truck, Tag, Check } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Truck, Tag, Check, LogIn } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { formatINR } from '../../lib/utils';
 
 interface CartDrawerProps {
@@ -9,6 +10,7 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout, onContinueShopping }) => {
+  const { user, openAuthModal } = useAuth();
   const {
     cart,
     isCartOpen,
@@ -17,8 +19,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout, onContinueSh
     removeFromCart,
     subtotal,
     shippingFee,
-    freeShippingThreshold,
-    freeShippingRemaining,
     discountCode,
     discountAmount,
     discountMessage,
@@ -40,8 +40,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout, onContinueSh
     await applyDiscount(inputCoupon);
     setApplying(false);
   };
-
-  const progressPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -70,26 +68,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout, onContinueSh
             </button>
           </div>
 
-          {/* Free Shipping Progress Indicator */}
+          {/* Free Shipping Guaranteed Banner */}
           <div className="bg-[#EBF5EE] p-3 px-5 border-b border-[#D4EAD9]">
-            <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
-              <span className="flex items-center gap-1.5 text-[#0A5C36]">
-                <Truck className="w-4 h-4" />
-                {freeShippingRemaining > 0 ? (
-                  <span>Add <strong className="text-gray-900">{formatINR(freeShippingRemaining)}</strong> more for Free Shipping!</span>
-                ) : (
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <Check className="w-4 h-4 stroke-[3]" /> You unlocked FREE Shipping!
-                  </span>
-                )}
+            <div className="flex items-center justify-between text-xs font-semibold">
+              <span className="flex items-center gap-1.5 text-[#0A5C36] font-bold">
+                <Truck className="w-4 h-4 text-[#0A5C36]" />
+                <span>Free Doorstep Delivery on this order</span>
               </span>
-              <span className="text-gray-500 font-bold">{progressPercent}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-              <div
-                className="bg-[#0A5C36] h-full rounded-full transition-all duration-300"
-                style={{ width: `${progressPercent}%` }}
-              />
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                Free
+              </span>
             </div>
           </div>
 
@@ -246,12 +234,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout, onContinueSh
               {/* Action Buttons */}
               <button
                 onClick={() => {
+                  if (!user) {
+                    setIsCartOpen(false);
+                    openAuthModal();
+                    return;
+                  }
                   setIsCartOpen(false);
                   onCheckout();
                 }}
-                className="w-full py-3.5 rounded-2xl bg-[#0A5C36] hover:bg-[#064024] active:scale-98 text-white font-bold text-sm flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transition-all"
+                className="w-full py-3.5 rounded-2xl bg-[#0A5C36] hover:bg-[#064024] active:scale-98 text-white font-bold text-sm flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
               >
-                <span>Proceed to Checkout</span>
+                <span>{user ? 'Proceed to Checkout' : 'Sign In to Checkout'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 

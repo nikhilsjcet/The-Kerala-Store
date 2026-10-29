@@ -36,7 +36,9 @@ export default async function handler(req, res) {
       });
     }
 
-    const html = await response.text();
+    const rawHtml = await response.text();
+    // Unescape forward slashes commonly found in Next.js JSON scripts
+    const html = rawHtml.replace(/\\\//g, '/');
 
     let title = '';
     let price = 0;

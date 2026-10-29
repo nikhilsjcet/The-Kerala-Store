@@ -11,11 +11,11 @@ export const AnnouncementBar: React.FC<AnnouncementBarProps> = ({ onOpenInfoModa
     <div className="bg-[#0B4628] text-white text-xs sm:text-sm font-medium py-2 px-4 transition-colors select-none">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         
-        {/* Left: Free Shipping on orders over ₹499 */}
+        {/* Left: Free Doorstep Delivery Across Kerala & India */}
         <div className="flex items-center space-x-2 text-white">
           <Truck className="w-4 h-4 text-emerald-300 shrink-0" />
           <span className="tracking-normal font-normal text-xs sm:text-sm">
-            Free Shipping on orders over <strong className="font-semibold text-white">₹499</strong>
+            Free Doorstep Delivery Across <strong className="font-semibold text-white">Kerala &amp; All India</strong>
           </span>
         </div>
 

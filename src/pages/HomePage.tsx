@@ -113,8 +113,8 @@ export const HomePage: React.FC<HomePageProps> = ({
           </button>
         </div>
 
-        {/* Product Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Product Cards Grid - 2 per row on Mobile, 4 on Desktop */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {trendingProducts.map((p) => (
             <ProductCard key={p.id} product={p} onSelect={onSelectProduct} />
           ))}
@@ -146,7 +146,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {bestSellers.map((p) => (
               <ProductCard key={p.id} product={p} onSelect={onSelectProduct} />
             ))}
@@ -178,7 +178,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {newArrivals.map((p) => (
             <ProductCard key={p.id} product={p} onSelect={onSelectProduct} />
           ))}

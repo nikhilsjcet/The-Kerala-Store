@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Tag,
   Copy,
-  Check
+  Check,
+  UserCheck
 } from 'lucide-react';
 
 interface CheckoutPageProps {
@@ -32,7 +33,7 @@ const INDIAN_STATES = [
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderSuccess }) => {
   const { cart, subtotal, shippingFee, discountAmount, discountCode, total, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
 
   const [formData, setFormData] = useState<ShippingAddress>({
     fullName: user?.full_name || '',
@@ -50,6 +51,35 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'razorpay'>('cod');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Require login before checkout if user is a guest
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#FBFBFA] flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-[#0A5C36] flex items-center justify-center mb-4 shadow-sm border border-emerald-100">
+          <UserCheck className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-black text-gray-900 mb-2">Sign In Required to Checkout</h2>
+        <p className="text-xs text-gray-500 mb-6 max-w-sm">
+          Please sign in or create an account with The Kerala Store to place your order and receive delivery updates.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={openAuthModal}
+            className="px-6 py-3 bg-[#0A5C36] hover:bg-[#074326] text-white rounded-2xl font-bold text-xs shadow-md transition-all cursor-pointer"
+          >
+            Sign In / Sign Up
+          </button>
+          <button
+            onClick={() => onNavigate('shop')}
+            className="px-6 py-3 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-2xl font-bold text-xs transition-colors cursor-pointer"
+          >
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (cart.length === 0) {
     return (

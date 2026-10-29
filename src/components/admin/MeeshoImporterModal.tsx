@@ -46,8 +46,8 @@ const CURATED_MEESHO_PRODUCTS = [
     price: 899,
     original_price: 1499,
     images: [
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80'
+      'https://images.meesho.com/images/products/18294012/1_512.jpg',
+      'https://images.meesho.com/images/products/18294012/2_512.jpg'
     ],
     short_description: 'Authentic Kerala Kasavu handloom-style cotton saree with elegant golden zari border.',
     sku: 'MSH-KASAVU-2026',
@@ -62,8 +62,8 @@ const CURATED_MEESHO_PRODUCTS = [
     price: 799,
     original_price: 1999,
     images: [
-      'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1572536147248-ac59a8abfa4b?auto=format&fit=crop&w=800&q=80'
+      'https://images.meesho.com/images/products/29401928/1_512.jpg',
+      'https://images.meesho.com/images/products/29401928/2_512.jpg'
     ],
     short_description: 'Ultra-low latency Bluetooth gaming and calling earbuds with 36 hours total battery backup.',
     sku: 'MSH-TWS-EARBUDS',
@@ -78,8 +78,8 @@ const CURATED_MEESHO_PRODUCTS = [
     price: 499,
     original_price: 999,
     images: [
-      'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80'
+      'https://images.meesho.com/images/products/38491024/1_512.jpg',
+      'https://images.meesho.com/images/products/38491024/2_512.jpg'
     ],
     short_description: 'Wireless food processor with 3 stainless steel blades. Chops onions, garlic, and nuts in 10 seconds.',
     sku: 'MSH-CHOPPER-PRO',
@@ -94,8 +94,8 @@ const CURATED_MEESHO_PRODUCTS = [
     price: 849,
     original_price: 1599,
     images: [
-      'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80'
+      'https://images.meesho.com/images/products/49201948/1_512.jpg',
+      'https://images.meesho.com/images/products/49201948/2_512.jpg'
     ],
     short_description: 'Compact 120W handheld vacuum cleaner with HEPA filter for deep vehicle and home cleaning.',
     sku: 'MSH-CAR-VACUUM',
@@ -110,8 +110,8 @@ const CURATED_MEESHO_PRODUCTS = [
     price: 999,
     original_price: 2499,
     images: [
-      'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=800&q=80'
+      'https://images.meesho.com/images/products/58392019/1_512.jpg',
+      'https://images.meesho.com/images/products/58392019/2_512.jpg'
     ],
     short_description: 'Waterproof activity tracker with color OLED touch display, step counter, and call notifications.',
     sku: 'MSH-FIT-BAND',
@@ -126,8 +126,8 @@ const CURATED_MEESHO_PRODUCTS = [
     price: 499,
     original_price: 899,
     images: [
-      'https://images.unsplash.com/photo-1608248597359-5f661a3554be?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80'
+      'https://images.meesho.com/images/products/69382014/1_512.jpg',
+      'https://images.meesho.com/images/products/69382014/2_512.jpg'
     ],
     short_description: 'Natural saffron and herbs infusion for radiant, glowing skin and dark spot reduction.',
     sku: 'MSH-KUMKUMADI-30ML',
@@ -142,8 +142,8 @@ const CURATED_MEESHO_PRODUCTS = [
     price: 499,
     original_price: 999,
     images: [
-      'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80'
+      'https://images.meesho.com/images/products/78291042/1_512.jpg',
+      'https://images.meesho.com/images/products/78291042/2_512.jpg'
     ],
     short_description: 'Ultra-thin bifold wallet with 8 card slots, currency compartment, and RFID protection.',
     sku: 'MSH-WALLET-RFID',
@@ -158,8 +158,8 @@ const CURATED_MEESHO_PRODUCTS = [
     price: 799,
     original_price: 1599,
     images: [
-      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1592840496694-26d035b52b48?auto=format&fit=crop&w=800&q=80'
+      'https://images.meesho.com/images/products/89301928/1_512.jpg',
+      'https://images.meesho.com/images/products/89301928/2_512.jpg'
     ],
     short_description: 'Pocket gaming console with 400 built-in retro games, rechargeable battery, and TV output.',
     sku: 'MSH-RETRO-400',
@@ -501,14 +501,8 @@ export const MeeshoImporterModal: React.FC<MeeshoImporterModalProps> = ({
       categoryCandidate = 'home-essentials';
     }
 
-    // Curated high-res multi-photo fallback only if extraction yielded 0 photos
-    let finalImgs = Array.from(new Set(extractedImages.filter(Boolean)));
-    if (finalImgs.length === 0) {
-      finalImgs = [
-        'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80'
-      ];
-    }
+    // Keep only genuine extracted photos (never inject fake Unsplash photos)
+    let finalImgs = Array.from(new Set(extractedImages.filter((img) => img && img.startsWith('http'))));
 
     // Customer Reviews: If none extracted, generate authentic verified customer reviews
     if (extractedReviews.length === 0) {

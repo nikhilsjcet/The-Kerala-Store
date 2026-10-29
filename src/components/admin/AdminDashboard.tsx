@@ -540,6 +540,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [discounts, setDiscounts] = useState<DiscountCode[]>([]);
 
   const [searchProduct, setSearchProduct] = useState('');
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [searchCustomer, setSearchCustomer] = useState('');
   const [searchOrder, setSearchOrder] = useState('');
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
@@ -702,6 +703,33 @@ Pincode: ${addr.pincode || ''}`;
     if (confirm('Are you sure you want to delete this product?')) {
       await StoreService.deleteProduct(id);
       showNotification('Product deleted successfully.');
+      setSelectedProductIds((prev) => prev.filter((item) => item !== id));
+      loadAllAdminData();
+    }
+  };
+
+  const handleToggleSelectProduct = (id: string) => {
+    setSelectedProductIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAllProducts = (filteredList: Product[]) => {
+    if (selectedProductIds.length === filteredList.length && filteredList.length > 0) {
+      setSelectedProductIds([]);
+    } else {
+      setSelectedProductIds(filteredList.map((p) => p.id));
+    }
+  };
+
+  const handleBulkDeleteProducts = async () => {
+    if (selectedProductIds.length === 0) return;
+    if (confirm(`Are you sure you want to permanently delete all ${selectedProductIds.length} selected products?`)) {
+      for (const id of selectedProductIds) {
+        await StoreService.deleteProduct(id);
+      }
+      showNotification(`${selectedProductIds.length} products deleted successfully.`);
+      setSelectedProductIds([]);
       loadAllAdminData();
     }
   };
@@ -1185,12 +1213,54 @@ Pincode: ${addr.pincode || ''}`;
                     onChange={(e) => setSearchProduct(e.target.value)}
                     className="flex-1 text-xs bg-transparent focus:outline-none"
                   />
+                  {selectedProductIds.length > 0 && (
+                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl animate-in fade-in">
+                      <span className="text-xs font-bold text-emerald-900">
+                        {selectedProductIds.length} selected
+                      </span>
+                      <button
+                        onClick={handleBulkDeleteProducts}
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Delete all selected products"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete ({selectedProductIds.length})</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedProductIds([])}
+                        className="text-stone-500 hover:text-stone-700 text-[11px] font-semibold cursor-pointer underline ml-1"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="bg-stone-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider font-semibold">
+                        <th className="py-3 px-3 w-10 text-center">
+                          <input
+                            type="checkbox"
+                            checked={
+                              products.length > 0 &&
+                              products.filter((p) => p.title.toLowerCase().includes(searchProduct.toLowerCase()) || p.sku.toLowerCase().includes(searchProduct.toLowerCase())).length > 0 &&
+                              selectedProductIds.length === products.filter((p) => p.title.toLowerCase().includes(searchProduct.toLowerCase()) || p.sku.toLowerCase().includes(searchProduct.toLowerCase())).length
+                            }
+                            onChange={() =>
+                              handleToggleSelectAllProducts(
+                                products.filter(
+                                  (p) =>
+                                    p.title.toLowerCase().includes(searchProduct.toLowerCase()) ||
+                                    p.sku.toLowerCase().includes(searchProduct.toLowerCase())
+                                )
+                              )
+                            }
+                            className="rounded text-[#0A5C36] focus:ring-[#0A5C36] accent-[#0A5C36] cursor-pointer"
+                            title="Select / Deselect all"
+                          />
+                        </th>
                         <th className="py-3 px-4">Item</th>
                         <th className="py-3 px-4">Department</th>
                         <th className="py-3 px-4">Selling (₹)</th>
@@ -1203,55 +1273,66 @@ Pincode: ${addr.pincode || ''}`;
                     <tbody className="divide-y divide-gray-100">
                       {products
                         .filter((p) => p.title.toLowerCase().includes(searchProduct.toLowerCase()) || p.sku.toLowerCase().includes(searchProduct.toLowerCase()))
-                        .map((p) => (
-                          <tr key={p.id} className="hover:bg-gray-50/80 transition-colors">
-                            <td className="py-3 px-4 flex items-center gap-3">
-                              <img
-                                src={p.images[0]}
-                                alt=""
-                                className="w-10 h-10 object-contain rounded-lg border border-gray-200 bg-white p-0.5 shrink-0"
-                              />
-                              <div className="min-w-0 max-w-xs">
-                                <p className="font-bold text-gray-900 truncate">{p.title}</p>
-                                <p className="text-[10px] text-gray-400 font-mono">SKU: {p.sku}</p>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 text-gray-600">{p.category?.name || 'General'}</td>
-                            <td className="py-3 px-4 font-bold text-[#0A5C36]">{formatINR(p.price)}</td>
-                            <td className="py-3 px-4 font-medium text-amber-900">
-                              {p.supplier_cost ? formatINR(p.supplier_cost) : '—'}
-                            </td>
-                            <td className="py-3 px-4 font-semibold text-gray-700">{p.stock_quantity}</td>
-                            <td className="py-3 px-4">
-                              <button
-                                onClick={() => handleTogglePublish(p)}
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  p.status === 'published'
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : 'bg-gray-200 text-gray-700'
-                                }`}
-                              >
-                                {p.status}
-                              </button>
-                            </td>
-                            <td className="py-3 px-4 text-right space-x-1 whitespace-nowrap">
-                              <button
-                                onClick={() => { setSelectedProductForModal(p); setIsProductModalOpen(true); }}
-                                className="p-1.5 text-gray-500 hover:text-[#0A5C36] rounded-lg hover:bg-gray-100"
-                                title="Edit Product"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProduct(p.id)}
-                                className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
-                                title="Delete Product"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        .map((p) => {
+                          const isSelected = selectedProductIds.includes(p.id);
+                          return (
+                            <tr key={p.id} className={`transition-colors ${isSelected ? 'bg-emerald-50/60' : 'hover:bg-gray-50/80'}`}>
+                              <td className="py-3 px-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleToggleSelectProduct(p.id)}
+                                  className="rounded text-[#0A5C36] focus:ring-[#0A5C36] accent-[#0A5C36] cursor-pointer"
+                                />
+                              </td>
+                              <td className="py-3 px-4 flex items-center gap-3">
+                                <img
+                                  src={p.images[0]}
+                                  alt=""
+                                  className="w-10 h-10 object-contain rounded-lg border border-gray-200 bg-white p-0.5 shrink-0"
+                                />
+                                <div className="min-w-0 max-w-xs">
+                                  <p className="font-bold text-gray-900 truncate">{p.title}</p>
+                                  <p className="text-[10px] text-gray-400 font-mono">SKU: {p.sku}</p>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-gray-600">{p.category?.name || 'General'}</td>
+                              <td className="py-3 px-4 font-bold text-[#0A5C36]">{formatINR(p.price)}</td>
+                              <td className="py-3 px-4 font-medium text-amber-900">
+                                {p.supplier_cost ? formatINR(p.supplier_cost) : '—'}
+                              </td>
+                              <td className="py-3 px-4 font-semibold text-gray-700">{p.stock_quantity}</td>
+                              <td className="py-3 px-4">
+                                <button
+                                  onClick={() => handleTogglePublish(p)}
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    p.status === 'published'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : 'bg-gray-200 text-gray-700'
+                                  }`}
+                                >
+                                  {p.status}
+                                </button>
+                              </td>
+                              <td className="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+                                <button
+                                  onClick={() => { setSelectedProductForModal(p); setIsProductModalOpen(true); }}
+                                  className="p-1.5 text-gray-500 hover:text-[#0A5C36] rounded-lg hover:bg-gray-100"
+                                  title="Edit Product"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(p.id)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                                  title="Delete Product"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>

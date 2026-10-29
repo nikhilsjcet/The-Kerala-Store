@@ -3,6 +3,7 @@ import { Product, ProductVariant } from '../types';
 import { StoreService } from '../services/storeService';
 import { formatINR } from '../lib/utils';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { ProductCard } from '../components/storefront/ProductCard';
 import { 
   Star, 
@@ -44,6 +45,16 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   const { addToCart, isInWishlist, toggleWishlist, setIsCartOpen } = useCart();
+  const { user, openAuthModal } = useAuth();
+
+  // Ensure scroll is at the very top immediately when entering product details
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (typeof document !== 'undefined') {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [slug]);
 
   useEffect(() => {
     let isMounted = true;
@@ -65,6 +76,9 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
           });
           setRelatedProducts(related.filter((p) => p.id !== prod.id));
           setIsLoading(false);
+
+          // Scroll to top when product finishes loading
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         }
       } catch (e) {
         console.error(e);
@@ -108,23 +122,51 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
   };
 
   const handleBuyNow = () => {
+    if (!user) {
+      openAuthModal();
+      return;
+    }
     addToCart(product, quantity, selectedVariant);
     onNavigate('checkout');
   };
 
   const handleCheckPincode = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^\d{6}$/.test(pincode.trim())) {
-      setPincodeMessage('Please enter a valid 6-digit Indian PIN code.');
+    const clean = pincode.trim();
+    if (!/^\d{6}$/.test(clean)) {
+      setPincodeMessage('⚠️ Please enter a valid 6-digit Indian PIN code.');
       return;
     }
-    const days = product.processing_time_days ? product.processing_time_days + 2 : 3;
-    const date = new Date(Date.now() + 86400000 * days).toLocaleDateString('en-IN', {
-      weekday: 'short',
+
+    // Live delivery region analysis for Indian pin codes
+    const prefix = clean.substring(0, 2);
+    let region = 'Pan-India Delivery';
+    let days = 4;
+
+    if (prefix === '67' || prefix === '68' || prefix === '69') {
+      region = 'Kerala (Express Local Courier)';
+      days = 2; // Fast 2-day delivery across Kerala
+    } else if (clean.startsWith('5')) {
+      region = 'South India (Karnataka, Tamil Nadu, Andhra)';
+      days = 3;
+    } else if (clean.startsWith('4') || clean.startsWith('3')) {
+      region = 'Western India (Maharashtra, Gujarat)';
+      days = 4;
+    } else {
+      region = 'North & East India';
+      days = 4;
+    }
+
+    const targetDate = new Date(Date.now() + 86400000 * days);
+    const dateFormatted = targetDate.toLocaleDateString('en-IN', {
+      weekday: 'long',
       month: 'short',
       day: 'numeric',
     });
-    setPincodeMessage(`Delivery available to ${pincode.trim()} by ${date}. Cash on Delivery & Free Shipping available!`);
+
+    setPincodeMessage(
+      `✅ Delivery available to PIN ${clean} (${region}) by ${dateFormatted}.\n🚚 Free Doorstep Delivery • 💵 Cash on Delivery Available • 📦 Direct Dispatch from Supplier Warehouse`
+    );
   };
 
   const handleShare = () => {
@@ -524,7 +566,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
             <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight mb-6">
               You Might Also Like
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {relatedProducts.map((p) => (
                 <ProductCard key={p.id} product={p} onSelect={onSelectProduct} />
               ))}

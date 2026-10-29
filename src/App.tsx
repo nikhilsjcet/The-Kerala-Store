@@ -59,14 +59,42 @@ const MainApp: React.FC = () => {
   const [infoModalType, setInfoModalType] = useState<string | null>(null);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
 
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAuthModalOpen, closeAuthModal } = useAuth();
+  const { isCartOpen, setIsCartOpen } = useCart();
 
   useEffect(() => {
+    // Ensure base history entry exists so pressing back doesn't close the site
+    if (!window.history.state) {
+      window.history.replaceState({ page: getInitialPage() }, '', window.location.href);
+    }
+
     const handleNavOrders = () => handleNavigate('orders');
     window.addEventListener('navigate-orders', handleNavOrders);
 
-    const handlePopState = () => {
-      setCurrentPage(getInitialPage());
+    const handlePopState = (e: PopStateEvent) => {
+      // If Cart Drawer or Auth Modal is open, closing it on back press prevents exiting site
+      if (isCartOpen) {
+        setIsCartOpen(false);
+        return;
+      }
+      if (isAuthModalOpen) {
+        closeAuthModal();
+        return;
+      }
+      if (infoModalType) {
+        setInfoModalType(null);
+        return;
+      }
+
+      if (e.state && e.state.page) {
+        setCurrentPage(e.state.page);
+        if (e.state.slug) setSelectedProductSlug(e.state.slug);
+        if (e.state.param?.startsWith('category=')) {
+          setSelectedCategorySlug(e.state.param.replace('category=', ''));
+        }
+      } else {
+        setCurrentPage('home');
+      }
     };
     window.addEventListener('popstate', handlePopState);
 
@@ -74,7 +102,7 @@ const MainApp: React.FC = () => {
       window.removeEventListener('navigate-orders', handleNavOrders);
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [isCartOpen, isAuthModalOpen, infoModalType]);
 
   const handleNavigate = (page: string, param?: string) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

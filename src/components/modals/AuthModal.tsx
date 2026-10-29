@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { KeralaStoreLogo } from '../common/KeralaStoreLogo';
 import { 
   X, 
   Mail, 
@@ -8,7 +9,6 @@ import {
   ArrowRight, 
   CheckCircle2, 
   AlertCircle, 
-  Sparkles, 
   KeyRound,
   Lock,
   Eye,
@@ -75,7 +75,12 @@ export const AuthModal: React.FC = () => {
     try {
       const res = await signInWithGoogle();
       if (res?.error) {
-        setErrorMsg('Google Sign-In is pending OAuth configuration in Supabase. Please sign in with Email & Password or OTP below.');
+        const msg = res.error.message || JSON.stringify(res.error);
+        if (msg.includes('provider is not enabled') || msg.includes('validation_failed') || msg.includes('Unsupported provider')) {
+          setErrorMsg('Google Sign-In is not enabled in your Supabase dashboard yet (Authentication -> Providers -> Google). Please sign in with Email & Password or OTP below.');
+        } else {
+          setErrorMsg(res.error.message || 'Could not connect to Google. Please sign in with Email below.');
+        }
       }
     } catch (err: any) {
       setErrorMsg(err?.message || 'Google sign in failed. Please use Email login.');
@@ -211,15 +216,12 @@ export const AuthModal: React.FC = () => {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header */}
-        <div className="text-center mb-5">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-50 text-[#0A5C36] mb-2.5">
-            <Sparkles className="w-6 h-6" />
+        {/* Modal Header with Official KeralaStore Logo (Cart with Kerala map) */}
+        <div className="text-center mb-5 flex flex-col items-center">
+          <div className="mb-2 select-none">
+            <KeralaStoreLogo size="lg" />
           </div>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
-            The Kerala Store
-          </h3>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-1 max-w-xs text-center">
             Access your order tracking, wishlist, and dropshipping delivery updates
           </p>
         </div>
