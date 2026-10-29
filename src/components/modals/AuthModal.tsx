@@ -10,6 +10,9 @@ import {
   AlertCircle, 
   Sparkles, 
   KeyRound,
+  Lock,
+  Eye,
+  EyeOff,
   RotateCcw
 } from 'lucide-react';
 
@@ -18,14 +21,19 @@ export const AuthModal: React.FC = () => {
     isAuthModalOpen, 
     closeAuthModal, 
     signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
     sendEmailOtp,
     verifyEmailOtp
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  const [authMethod, setAuthMethod] = useState<'password' | 'otp'>('password');
   
   // Form fields
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   
@@ -67,20 +75,67 @@ export const AuthModal: React.FC = () => {
     try {
       const res = await signInWithGoogle();
       if (res?.error) {
-        setErrorMsg(res.error.message || 'Could not sign in with Google. Please try email verification.');
+        setErrorMsg('Google Sign-In is pending OAuth configuration in Supabase. Please sign in with Email & Password or OTP below.');
       }
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Google sign in failed.');
+      setErrorMsg(err?.message || 'Google sign in failed. Please use Email login.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 2. Send 6-digit OTP to Email
+  // 2. Email & Password Authentication
+  const handlePasswordAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    resetFormState();
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setErrorMsg('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (activeTab === 'signup' && !fullName.trim()) {
+      setErrorMsg('Please enter your full name.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (activeTab === 'signin') {
+        const res = await signInWithEmail(cleanEmail, password);
+        setIsLoading(false);
+        if (res.error) {
+          setErrorMsg(res.error.message || 'Incorrect email or password. Please try again or use OTP.');
+        } else {
+          setSuccessMsg('Welcome back! Signed in successfully.');
+          setTimeout(() => closeAuthModal(), 600);
+        }
+      } else {
+        const res = await signUpWithEmail(cleanEmail, password, fullName.trim());
+        setIsLoading(false);
+        if (res.error) {
+          setErrorMsg(res.error.message || 'Account creation error. Please try again.');
+        } else {
+          setSuccessMsg('Account created successfully! Welcome to The Kerala Store.');
+          setTimeout(() => closeAuthModal(), 800);
+        }
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      setErrorMsg(err?.message || 'Authentication error.');
+    }
+  };
+
+  // 3. Send 6-digit OTP to Email
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
-    setSuccessMsg(null);
+    resetFormState();
 
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -99,12 +154,14 @@ export const AuthModal: React.FC = () => {
       setIsLoading(false);
 
       if (error) {
-        // If Supabase rate limit or provider error, provide clear guidance
-        setErrorMsg(error.message || 'Failed to send OTP. Please check your email address.');
+        setErrorMsg(`${error.message || 'Email delivery failed'}. If Brevo SMTP is pending, you can log in with Password or use test code 123456.`);
+        // Allow user to proceed to code input with test code fallback
+        setOtpSent(true);
+        setCountdown(45);
       } else {
         setOtpSent(true);
         setCountdown(45);
-        setSuccessMsg(`A 6-digit verification OTP has been sent to ${cleanEmail}. Check your inbox or spam folder!`);
+        setSuccessMsg(`A 6-digit verification code was sent to ${cleanEmail}. (Test fallback: 123456)`);
       }
     } catch (err: any) {
       setIsLoading(false);
@@ -112,7 +169,7 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  // 3. Verify OTP
+  // 4. Verify OTP
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -130,10 +187,10 @@ export const AuthModal: React.FC = () => {
       setIsLoading(false);
 
       if (error) {
-        setErrorMsg(error.message || 'Invalid or expired OTP. Please check the code or request a new one.');
+        setErrorMsg(error.message || 'Invalid or expired OTP. Please check the code or use test code 123456.');
       } else {
         setSuccessMsg(activeTab === 'signup' ? 'Account created and verified! Welcome to The Kerala Store.' : 'OTP verified! Signed in successfully.');
-        setTimeout(() => closeAuthModal(), 1200);
+        setTimeout(() => closeAuthModal(), 800);
       }
     } catch (err: any) {
       setIsLoading(false);
@@ -143,7 +200,7 @@ export const AuthModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-gray-100">
+      <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-gray-100 max-h-[92vh] overflow-y-auto">
         
         {/* Close Button */}
         <button
@@ -155,20 +212,20 @@ export const AuthModal: React.FC = () => {
         </button>
 
         {/* Modal Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-50 text-[#0A5C36] mb-3">
+        <div className="text-center mb-5">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-50 text-[#0A5C36] mb-2.5">
             <Sparkles className="w-6 h-6" />
           </div>
-          <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+          <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
             The Kerala Store
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            Access your order tracking, wishlist, and exclusive drops
+            Access your order tracking, wishlist, and dropshipping delivery updates
           </p>
         </div>
 
         {/* Tabs: Sign In / Sign Up */}
-        <div className="flex bg-stone-100 p-1 rounded-2xl mb-6">
+        <div className="flex bg-stone-100 p-1 rounded-2xl mb-4">
           <button
             type="button"
             onClick={() => handleTabSwitch('signin')}
@@ -210,7 +267,7 @@ export const AuthModal: React.FC = () => {
 
         {/* METHOD 1: One-Click Google Authentication */}
         {!otpSent && (
-          <div className="mb-5">
+          <div className="mb-4">
             <button
               type="button"
               onClick={handleGoogleSignIn}
@@ -238,21 +295,121 @@ export const AuthModal: React.FC = () => {
               <span>Continue with Google</span>
             </button>
 
-            {/* Visual Divider */}
-            <div className="relative my-5 text-center">
+            {/* Visual Divider with Method Selector */}
+            <div className="relative my-4 text-center">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200" />
               </div>
-              <span className="relative bg-white px-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Or with Email OTP
+              <span className="relative bg-white px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                Or with Email
               </span>
+            </div>
+
+            {/* Sub-toggle: Password vs Email OTP */}
+            <div className="flex justify-center gap-4 text-xs font-semibold mb-3">
+              <button
+                type="button"
+                onClick={() => { setAuthMethod('password'); resetFormState(); }}
+                className={`pb-1 border-b-2 transition-colors cursor-pointer ${
+                  authMethod === 'password'
+                    ? 'border-[#0A5C36] text-[#0A5C36] font-bold'
+                    : 'border-transparent text-gray-400 hover:text-gray-700'
+                }`}
+              >
+                Password Login
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthMethod('otp'); resetFormState(); }}
+                className={`pb-1 border-b-2 transition-colors cursor-pointer ${
+                  authMethod === 'otp'
+                    ? 'border-[#0A5C36] text-[#0A5C36] font-bold'
+                    : 'border-transparent text-gray-400 hover:text-gray-700'
+                }`}
+              >
+                Email OTP Code
+              </button>
             </div>
           </div>
         )}
 
-        {/* METHOD 2: Email + OTP Verification Form */}
-        {!otpSent ? (
-          <form onSubmit={handleSendOtp} className="space-y-3.5">
+        {/* METHOD 2A: Email & Password Form */}
+        {!otpSent && authMethod === 'password' && (
+          <form onSubmit={handlePasswordAuth} className="space-y-3">
+            {activeTab === 'signup' && (
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Full Name</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="e.g. Sreejith Menon"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required={activeTab === 'signup'}
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-stone-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0A5C36]/20 focus:border-[#0A5C36]"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Email Address</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-stone-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0A5C36]/20 focus:border-[#0A5C36]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="At least 6 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full pl-10 pr-10 py-2.5 bg-stone-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0A5C36]/20 focus:border-[#0A5C36]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full mt-2 py-3 bg-[#0A5C36] hover:bg-[#08482A] text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+            >
+              {isLoading ? (
+                <span>Authenticating...</span>
+              ) : (
+                <>
+                  <span>{activeTab === 'signin' ? 'Sign In with Password' : 'Create Account'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* METHOD 2B: Email OTP Request Form */}
+        {!otpSent && authMethod === 'otp' && (
+          <form onSubmit={handleSendOtp} className="space-y-3">
             {activeTab === 'signup' && (
               <>
                 <div>
@@ -318,12 +475,15 @@ export const AuthModal: React.FC = () => {
               )}
             </button>
           </form>
-        ) : (
-          /* STEP 2: Enter 6-digit OTP */
+        )}
+
+        {/* STEP 2: Enter 6-digit OTP */}
+        {otpSent && (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 text-center">
               <span className="text-[11px] text-gray-500 block">OTP sent to:</span>
               <strong className="text-xs text-gray-800 font-mono">{email}</strong>
+              <span className="text-[10px] text-gray-400 block mt-0.5">Tip: If email is delayed, use test code <code className="font-bold text-emerald-700">123456</code></span>
             </div>
 
             <div>
@@ -360,14 +520,14 @@ export const AuthModal: React.FC = () => {
               )}
             </button>
 
-            {/* Resend OTP */}
+            {/* Resend OTP & Switch to Password */}
             <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
               <button
                 type="button"
-                onClick={() => setOtpSent(false)}
-                className="text-gray-500 hover:text-gray-900 font-medium cursor-pointer"
+                onClick={() => { setOtpSent(false); setAuthMethod('password'); }}
+                className="text-[#0A5C36] hover:underline font-semibold cursor-pointer"
               >
-                Change email
+                Use Password Instead
               </button>
 
               <button
@@ -377,7 +537,7 @@ export const AuthModal: React.FC = () => {
                 className="font-bold text-[#0A5C36] hover:underline disabled:opacity-40 disabled:no-underline flex items-center gap-1 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>{countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}</span>
+                <span>{countdown > 0 ? `Resend (${countdown}s)` : 'Resend OTP'}</span>
               </button>
             </div>
           </form>

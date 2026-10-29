@@ -193,23 +193,27 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
               {showUserDropdown && (
                 <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-xs text-gray-400">Signed in as</p>
+                    <p className="text-xs text-gray-400">
+                      {user ? 'Signed in as' : 'Welcome to The Kerala Store'}
+                    </p>
                     <p className="text-sm font-bold text-gray-900 truncate">
                       {user ? user.full_name : 'Guest Shopper'}
                     </p>
                     <p className="text-xs text-[#0B4628] font-medium">
-                      {isAdmin ? 'Store Administrator' : 'Kerala Shopper'}
+                      {user ? (isAdmin ? 'Store Administrator' : 'Kerala Shopper') : 'Login to track orders & save wishlist'}
                     </p>
                   </div>
 
                   <div className="py-1">
-                    <button
-                      onClick={() => { setShowUserDropdown(false); openAuthModal(); }}
-                      className="w-full px-4 py-2.5 text-left text-xs sm:text-sm text-emerald-950 bg-emerald-50 hover:bg-emerald-100 font-extrabold flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      <User className="w-4 h-4 text-[#0A5C36]" />
-                      Sign In / Sign Up
-                    </button>
+                    {!user && (
+                      <button
+                        onClick={() => { setShowUserDropdown(false); openAuthModal(); }}
+                        className="w-full px-4 py-2.5 text-left text-xs sm:text-sm text-emerald-950 bg-emerald-50 hover:bg-emerald-100 font-extrabold flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <User className="w-4 h-4 text-[#0A5C36]" />
+                        Sign In / Sign Up
+                      </button>
+                    )}
 
                     <button
                       onClick={() => { setShowUserDropdown(false); onNavigate('orders'); }}
@@ -227,13 +231,16 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
                       Wishlist ({wishlist.length})
                     </button>
 
-                    <button
-                      onClick={() => { setShowUserDropdown(false); onNavigate('admin'); }}
-                      className="w-full px-4 py-2 text-left text-xs sm:text-sm text-[#0B4628] font-semibold hover:bg-emerald-50 flex items-center gap-2"
-                    >
-                      <ShieldCheck className="w-4 h-4 text-[#0B4628]" />
-                      Store Admin Dashboard
-                    </button>
+                    {/* Admin Dashboard: ONLY visible to authenticated Store Admins */}
+                    {isAdmin && (
+                      <button
+                        onClick={() => { setShowUserDropdown(false); onNavigate('admin'); }}
+                        className="w-full px-4 py-2 text-left text-xs sm:text-sm text-[#0B4628] font-bold hover:bg-emerald-50 flex items-center gap-2"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-[#0B4628]" />
+                        Store Admin Dashboard
+                      </button>
+                    )}
                   </div>
 
                   {user && (
@@ -316,25 +323,41 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
           >
             Shop All Products
           </button>
-          <button
-            onClick={() => { setMobileMenuOpen(false); openAuthModal(); }}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm font-bold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 flex items-center gap-2"
-          >
-            <User className="w-4 h-4 text-[#0A5C36]" />
-            <span>Sign In / Sign Up</span>
-          </button>
+          {!user ? (
+            <button
+              onClick={() => { setMobileMenuOpen(false); openAuthModal(); }}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-bold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 flex items-center gap-2"
+            >
+              <User className="w-4 h-4 text-[#0A5C36]" />
+              <span>Sign In / Sign Up</span>
+            </button>
+          ) : (
+            <div className="px-3 py-2 bg-stone-50 rounded-xl flex items-center justify-between text-xs">
+              <span className="font-semibold text-gray-700 truncate max-w-[180px]">{user.full_name}</span>
+              <button
+                onClick={() => { setMobileMenuOpen(false); logout(); }}
+                className="text-red-600 font-bold hover:underline"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
           <button
             onClick={() => { setMobileMenuOpen(false); onNavigate('orders'); }}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
           >
-            My Orders
+            <Package className="w-4 h-4 text-gray-400" />
+            <span>My Orders</span>
           </button>
-          <button
-            onClick={() => { setMobileMenuOpen(false); onNavigate('admin'); }}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm font-bold text-[#0B4628] bg-emerald-50"
-          >
-            Store Admin Dashboard
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => { setMobileMenuOpen(false); onNavigate('admin'); }}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-bold text-[#0B4628] bg-emerald-50 flex items-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4 text-[#0B4628]" />
+              <span>Store Admin Dashboard</span>
+            </button>
+          )}
         </div>
       )}
     </header>

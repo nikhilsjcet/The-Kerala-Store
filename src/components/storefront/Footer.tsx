@@ -291,6 +291,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateCategory, onOpenPolicy
           {/* Copyright and legal footer */}
           <div className="mt-8 text-center text-xs text-gray-400">
             &copy; {new Date().getFullYear()} TheKeralaStore. An independent student dropshipping project based in Kottayam, Kerala. Official Support: @thekeralastore_
+            <span className="mx-2">•</span>
+            <button 
+              onClick={() => onOpenPolicy('admin')} 
+              className="hover:text-gray-600 underline text-[11px] cursor-pointer"
+            >
+              Staff Portal
+            </button>
           </div>
 
         </div>

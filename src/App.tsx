@@ -20,10 +20,35 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { WishlistPage } from './pages/WishlistPage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminLoginView } from './components/admin/AdminLoginView';
 import { Product, Order } from './types';
 
+const getInitialPage = (): 'home' | 'shop' | 'product-details' | 'checkout' | 'orders' | 'wishlist' | 'admin' => {
+  if (typeof window === 'undefined') return 'home';
+  const path = window.location.pathname.toLowerCase();
+  const search = window.location.search.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+
+  if (path === '/admin' || path.startsWith('/admin') || search.includes('page=admin') || hash === '#admin') {
+    return 'admin';
+  }
+  if (path === '/orders' || search.includes('page=orders') || hash === '#orders') {
+    return 'orders';
+  }
+  if (path === '/wishlist' || search.includes('page=wishlist') || hash === '#wishlist') {
+    return 'wishlist';
+  }
+  if (path === '/checkout' || search.includes('page=checkout')) {
+    return 'checkout';
+  }
+  if (path === '/shop' || search.includes('page=shop') || hash === '#shop') {
+    return 'shop';
+  }
+  return 'home';
+};
+
 const MainApp: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product-details' | 'checkout' | 'orders' | 'wishlist' | 'admin'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product-details' | 'checkout' | 'orders' | 'wishlist' | 'admin'>(getInitialPage);
   const [selectedProductSlug, setSelectedProductSlug] = useState<string>('');
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
   const [activeSearchQuery, setActiveSearchQuery] = useState<string>('');
@@ -39,12 +64,22 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     const handleNavOrders = () => handleNavigate('orders');
     window.addEventListener('navigate-orders', handleNavOrders);
-    return () => window.removeEventListener('navigate-orders', handleNavOrders);
+
+    const handlePopState = () => {
+      setCurrentPage(getInitialPage());
+    };
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('navigate-orders', handleNavOrders);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   const handleNavigate = (page: string, param?: string) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (page === 'home') {
+      window.history.pushState({ page: 'home' }, '', '/');
       setCurrentPage('home');
     } else if (page === 'shop') {
       if (param?.startsWith('category=')) {
@@ -58,17 +93,23 @@ const MainApp: React.FC = () => {
         setActiveSearchQuery('');
         setActiveFilter('');
       }
+      window.history.pushState({ page: 'shop' }, '', '/shop' + (param ? `?${param}` : ''));
       setCurrentPage('shop');
     } else if (page === 'product-details' && param) {
       setSelectedProductSlug(param);
+      window.history.pushState({ page: 'product-details', slug: param }, '', `/product/${param}`);
       setCurrentPage('product-details');
     } else if (page === 'checkout') {
+      window.history.pushState({ page: 'checkout' }, '', '/checkout');
       setCurrentPage('checkout');
     } else if (page === 'orders') {
+      window.history.pushState({ page: 'orders' }, '', '/orders');
       setCurrentPage('orders');
     } else if (page === 'wishlist') {
+      window.history.pushState({ page: 'wishlist' }, '', '/wishlist');
       setCurrentPage('wishlist');
     } else if (page === 'admin') {
+      window.history.pushState({ page: 'admin' }, '', '/admin');
       setCurrentPage('admin');
     }
   };
@@ -76,27 +117,41 @@ const MainApp: React.FC = () => {
   const handleSelectProduct = (product: Product) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setSelectedProductSlug(product.slug);
+    window.history.pushState({ page: 'product-details', slug: product.slug }, '', `/product/${product.slug}`);
     setCurrentPage('product-details');
   };
 
   const handleSelectCategoryFromNav = (slug: string) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setSelectedCategorySlug(slug);
+    window.history.pushState({ page: 'shop', category: slug }, '', `/shop?category=${slug}`);
     setCurrentPage('shop');
   };
 
   const handleOrderSuccess = (order: Order) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setRecentOrder(order);
+    window.history.pushState({ page: 'orders' }, '', '/orders');
     setCurrentPage('orders');
   };
 
-  // If in admin page, render the full admin dashboard
+  // If in admin page, check if authenticated
   if (currentPage === 'admin') {
+    if (!isAdmin) {
+      return (
+        <AdminLoginView
+          onBackToStorefront={() => handleNavigate('home')}
+          onSuccess={() => {
+            // Re-renders with AdminDashboard once authenticated
+          }}
+        />
+      );
+    }
+
     return (
       <>
         <AdminDashboard
-          onBackToStorefront={() => setCurrentPage('home')}
+          onBackToStorefront={() => handleNavigate('home')}
           onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
         />
         <SupabaseModal
@@ -181,7 +236,11 @@ const MainApp: React.FC = () => {
       {/* 5. Footer */}
       <Footer
         onNavigateCategory={handleSelectCategoryFromNav}
-        onOpenPolicy={(policy) => policy === 'track' ? handleNavigate('orders') : setInfoModalType(policy)}
+        onOpenPolicy={(policy) => {
+          if (policy === 'track') handleNavigate('orders');
+          else if (policy === 'admin') handleNavigate('admin');
+          else setInfoModalType(policy);
+        }}
       />
 
       {/* 6. Slide-Over Cart Drawer */}

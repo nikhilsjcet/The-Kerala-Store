@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { 
   StoreService 
 } from '../../services/storeService';
@@ -520,6 +521,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onBackToStorefront,
   onOpenSupabaseModal 
 }) => {
+  const { logout } = useAuth();
+
+  const handleAdminLogout = () => {
+    logout();
+    onBackToStorefront();
+  };
+
   const [activeTab, setActiveTab] = useState<
     'overview' | 'products' | 'categories' | 'orders' | 'customers' | 'meesho' | 'suppliers' | 'inventory' | 'discounts' | 'settings'
   >('overview');
@@ -778,43 +786,114 @@ Pincode: ${addr.pincode || ''}`;
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col">
       
-      {/* Top Admin Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center space-x-4">
+      {/* Top Admin Header - Responsive & Mobile-Optimized */}
+      <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sticky top-0 z-30 shadow-2xs">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
           <button
             onClick={onBackToStorefront}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-800 transition-colors"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-800 transition-colors shrink-0"
+            title="Return to Public Storefront"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Storefront</span>
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Store</span>
           </button>
 
-          <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <h1 className="text-base font-extrabold text-gray-900 tracking-tight flex items-center gap-1.5">
-              <span>TheKeralaStore</span>
-              <span className="text-[10px] font-black uppercase tracking-wider bg-gray-900 text-white px-2 py-0.5 rounded-md">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <h1 className="text-xs sm:text-sm md:text-base font-extrabold text-gray-900 tracking-tight flex items-center gap-1 sm:gap-1.5 truncate">
+              <span className="truncate">TheKeralaStore</span>
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-gray-900 text-white px-1.5 sm:px-2 py-0.5 rounded-md shrink-0">
                 Admin
               </span>
             </h1>
           </div>
         </div>
 
-        {/* Supabase status button */}
-        <div className="flex items-center space-x-3">
+        {/* Right Actions: Supabase status & Lock Admin */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
           <button
             onClick={onOpenSupabaseModal}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border transition-all ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border transition-all ${
               isConnected
                 ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100'
                 : 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
             }`}
           >
             <Database className="w-3.5 h-3.5" />
-            <span>{isConnected ? 'Supabase: Connected' : 'Supabase: Local Sandbox'}</span>
+            <span className="hidden md:inline">{isConnected ? 'Supabase: Connected' : 'Supabase: Sandbox'}</span>
+            <span className="md:hidden text-[11px] font-bold">{isConnected ? 'Connected' : 'Local'}</span>
+          </button>
+
+          <button
+            onClick={handleAdminLogout}
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-colors"
+            title="Lock Admin & Sign Out"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Lock Admin</span>
           </button>
         </div>
       </header>
+
+      {/* Mobile Horizontal Scrolling Tabs Bar */}
+      <div className="md:hidden bg-white border-b border-gray-200 px-3 py-2 overflow-x-auto flex items-center space-x-1.5 shrink-0 shadow-2xs">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            activeTab === 'overview' ? 'bg-[#0A5C36] text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('products')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            activeTab === 'products' ? 'bg-[#0A5C36] text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          Products ({products.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('orders')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            activeTab === 'orders' ? 'bg-[#0A5C36] text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          Orders ({orders.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('categories')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            activeTab === 'categories' ? 'bg-[#0A5C36] text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          Categories
+        </button>
+        <button
+          onClick={() => setActiveTab('meesho')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            activeTab === 'meesho' ? 'bg-[#0A5C36] text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          Meesho
+        </button>
+        <button
+          onClick={() => setActiveTab('customers')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            activeTab === 'customers' ? 'bg-[#0A5C36] text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          Customers
+        </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            activeTab === 'settings' ? 'bg-[#0A5C36] text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          Settings
+        </button>
+      </div>
 
       {/* Notification Toast */}
       {message && (
