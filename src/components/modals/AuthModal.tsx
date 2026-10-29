@@ -13,7 +13,8 @@ import {
   Eye,
   EyeOff,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Info
 } from 'lucide-react';
 
 const maskEmail = (rawEmail: string): string => {
@@ -41,6 +42,7 @@ export const AuthModal: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signup');
   const [isOtpLoginMode, setIsOtpLoginMode] = useState(false);
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
   
   // Form fields
   const [email, setEmail] = useState('');
@@ -75,6 +77,7 @@ export const AuthModal: React.FC = () => {
     setOtpSent(false);
     setOtpCode('');
     setIsOtpLoginMode(false);
+    setUnconfirmedEmail(null);
   };
 
   const handleTabSwitch = (tab: 'signin' | 'signup') => {
@@ -82,7 +85,7 @@ export const AuthModal: React.FC = () => {
     setActiveTab(tab);
   };
 
-  // 1. One-Click Google OAuth
+  // 1. Google OAuth
   const handleGoogleSignIn = async () => {
     resetFormState();
     setIsLoading(true);
@@ -103,7 +106,7 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  // 2. Sign Up Submission: Create account and trigger 6-digit OTP email
+  // 2. New Signup Flow: supabase.auth.signUp()
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     resetFormState();
@@ -132,32 +135,40 @@ export const AuthModal: React.FC = () => {
       setIsLoading(false);
 
       if (res.error) {
-        const rawMsg = res.error.message || 'Signup failed';
-        if (rawMsg.toLowerCase().includes('already registered') || rawMsg.toLowerCase().includes('already exists')) {
-          setErrorMsg('An account with this email already exists. Please switch to Sign In.');
-        } else if (rawMsg.toLowerCase().includes('rate limit') || rawMsg.toLowerCase().includes('frequency')) {
-          setErrorMsg('Too many attempts. Please wait 60 seconds before trying again.');
+        const rawMsg = (res.error.message || '').toLowerCase();
+        if (rawMsg.includes('already registered') || rawMsg.includes('already exists') || rawMsg.includes('user already exists')) {
+          setErrorMsg('An account with this email is already registered. Please switch to Sign In.');
+        } else if (rawMsg.includes('rate limit') || rawMsg.includes('frequency') || rawMsg.includes('seconds')) {
+          setErrorMsg('Too many requests. For security, please wait 60 seconds before trying again.');
         } else {
-          setErrorMsg(rawMsg);
+          setErrorMsg(res.error.message || 'Could not register account. Please check your details.');
         }
         return;
       }
 
-      // Supabase user registered -> OTP email dispatched
+      // Check whether user already existed in Supabase (identities array is empty)
+      if (res.isAlreadyRegistered) {
+        setErrorMsg('An account with this email is already registered and confirmed. Please sign in with your password.');
+        return;
+      }
+
+      // Successful new signup -> Supabase dispatches confirmation OTP
       setOtpSent(true);
       setOtpFlowType('signup');
       setCountdown(60);
-      setSuccessMsg(`A 6-digit verification code has been sent to your email. Please enter it below to complete registration.`);
+      setSuccessMsg('Verification code requested. Please check your inbox and spam folder (delivery typically takes 1–3 minutes).');
     } catch (err: any) {
       setIsLoading(false);
       setErrorMsg(err?.message || 'Network error during signup.');
     }
   };
 
-  // 3. Sign In Submission: Existing user password login (with unconfirmed redirect)
+  // 3. Password Login: strictly supabase.auth.signInWithPassword()
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    resetFormState();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setUnconfirmedEmail(null);
 
     const cleanEmail = email.trim().toLowerCase();
 
@@ -178,20 +189,16 @@ export const AuthModal: React.FC = () => {
 
       if (res.error) {
         const raw = (res.error.message || '').toLowerCase();
-        // If user registered earlier but hasn't confirmed email yet
-        if (raw.includes('not confirmed') || raw.includes('confirm your email')) {
-          setIsResending(true);
-          await resendSignupOtp(cleanEmail);
-          setIsResending(false);
-          setOtpSent(true);
-          setOtpFlowType('signup');
-          setCountdown(60);
-          setErrorMsg('Your email is not verified yet. We have resent a 6-digit verification code to your email. Please verify below:');
+        
+        // If email has not been confirmed yet
+        if (raw.includes('not confirmed') || raw.includes('confirm your email') || res.error.code === 'email_not_confirmed') {
+          setUnconfirmedEmail(cleanEmail);
+          setErrorMsg('Your email address has not been confirmed yet. Please verify your account before signing in.');
           return;
         }
 
         if (raw.includes('invalid login credentials') || raw.includes('invalid credentials')) {
-          setErrorMsg('Incorrect email or password. Please try again or create a new account.');
+          setErrorMsg('Incorrect email or password. Please try again.');
         } else {
           setErrorMsg(res.error.message || 'Sign in failed. Please check your credentials.');
         }
@@ -206,11 +213,38 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  // 4. One-Time Passwordless Sign-In (for users who prefer OTP login)
+  // 3b. Explicit handler to resend unconfirmed signup code (when user explicitly requests it)
+  const handleResendUnconfirmedSignupOtp = async () => {
+    if (!unconfirmedEmail || isResending || countdown > 0) return;
+    setIsResending(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await resendSignupOtp(unconfirmedEmail);
+      setIsResending(false);
+
+      if (res.error) {
+        setErrorMsg(res.error.message || 'Could not resend confirmation code. Please wait a moment.');
+        return;
+      }
+
+      setOtpSent(true);
+      setOtpFlowType('signup');
+      setCountdown(60);
+      setSuccessMsg('Confirmation code requested. If unconfirmed, please check your inbox and spam folder.');
+    } catch (err: any) {
+      setIsResending(false);
+      setErrorMsg(err?.message || 'Network error resending code.');
+    }
+  };
+
+  // 4. Passwordless Login: strictly supabase.auth.signInWithOtp({ shouldCreateUser: false })
   const handlePasswordlessOtpSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
+    setUnconfirmedEmail(null);
 
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -224,21 +258,28 @@ export const AuthModal: React.FC = () => {
       setIsLoading(false);
 
       if (error) {
-        setErrorMsg(error.message || 'Could not send OTP login code.');
+        const raw = (error.message || '').toLowerCase();
+        if (raw.includes('not allowed') || raw.includes('not found') || raw.includes('signups not allowed')) {
+          setErrorMsg('No registered account found with this email. Please switch to Sign Up to create an account first.');
+        } else if (raw.includes('rate limit') || raw.includes('frequency') || raw.includes('seconds')) {
+          setErrorMsg('Too many login attempts. Please wait 60 seconds before requesting another code.');
+        } else {
+          setErrorMsg(error.message || 'Could not send login code.');
+        }
         return;
       }
 
       setOtpSent(true);
       setOtpFlowType('email');
       setCountdown(60);
-      setSuccessMsg(`A 6-digit login code has been sent to ${cleanEmail}.`);
+      setSuccessMsg('One-time login code requested. If this email is registered, please check your inbox and spam folder.');
     } catch (err: any) {
       setIsLoading(false);
       setErrorMsg(err?.message || 'Network error sending OTP.');
     }
   };
 
-  // 5. Verify the 6-Digit OTP (Works with 'signup' verification type)
+  // 5. Verify the 6-Digit OTP (Distinct type: 'signup' vs 'email')
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -246,7 +287,7 @@ export const AuthModal: React.FC = () => {
 
     const cleanCode = otpCode.trim();
     if (cleanCode.length < 6) {
-      setErrorMsg('Please enter the full 6-digit verification code.');
+      setErrorMsg('Please enter all 6 digits of the verification code.');
       return;
     }
 
@@ -264,7 +305,7 @@ export const AuthModal: React.FC = () => {
       if (error) {
         const raw = (error.message || '').toLowerCase();
         if (raw.includes('expired')) {
-          setErrorMsg('The verification code has expired. Please click Resend OTP to receive a fresh code.');
+          setErrorMsg('The verification code has expired. Please click Resend Code to receive a fresh code.');
         } else if (raw.includes('already') || raw.includes('used')) {
           setErrorMsg('This code has already been used. Please request a new code or sign in.');
         } else if (raw.includes('invalid') || raw.includes('not match')) {
@@ -275,7 +316,11 @@ export const AuthModal: React.FC = () => {
         return;
       }
 
-      setSuccessMsg('Email verified successfully! Welcome to The Kerala Store.');
+      setSuccessMsg(
+        otpFlowType === 'signup'
+          ? 'Email verified and account activated! Welcome to The Kerala Store.'
+          : 'Signed in successfully! Welcome back.'
+      );
       setTimeout(() => closeAuthModal(), 700);
     } catch (err: any) {
       setIsLoading(false);
@@ -283,26 +328,27 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  // 6. Resend 6-digit OTP
+  // 6. Resend OTP
   const handleResendOtp = async () => {
     if (countdown > 0 || isResending) return;
     setErrorMsg(null);
     setSuccessMsg(null);
     setIsResending(true);
 
+    const cleanEmail = email.trim().toLowerCase();
     try {
       let res;
       if (otpFlowType === 'signup') {
-        res = await resendSignupOtp(email.trim().toLowerCase());
+        res = await resendSignupOtp(cleanEmail);
       } else {
-        res = await sendEmailOtp(email.trim().toLowerCase(), fullName.trim());
+        res = await sendEmailOtp(cleanEmail, fullName.trim());
       }
       setIsResending(false);
 
       if (res.error) {
         const raw = (res.error.message || '').toLowerCase();
         if (raw.includes('rate limit') || raw.includes('frequency') || raw.includes('seconds')) {
-          setErrorMsg('For security purposes, please wait a moment before requesting another code.');
+          setErrorMsg('For security purposes, please wait 60 seconds before requesting another code.');
         } else {
           setErrorMsg(res.error.message || 'Could not resend code. Please try again.');
         }
@@ -310,7 +356,7 @@ export const AuthModal: React.FC = () => {
       }
 
       setCountdown(60);
-      setSuccessMsg(`A new 6-digit verification code has been sent to ${email}.`);
+      setSuccessMsg('A new verification code was requested. Please check your inbox and spam folder.');
     } catch (err: any) {
       setIsResending(false);
       setErrorMsg(err?.message || 'Network error resending code.');
@@ -340,7 +386,7 @@ export const AuthModal: React.FC = () => {
           </p>
         </div>
 
-        {/* Top Tabs: Sign Up (Default for new users) vs Sign In */}
+        {/* Top Tabs: Sign Up vs Sign In */}
         {!otpSent && (
           <div className="flex bg-stone-100 p-1 rounded-2xl mb-4">
             <button
@@ -372,7 +418,20 @@ export const AuthModal: React.FC = () => {
         {errorMsg && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200/80 rounded-xl flex items-start gap-2.5 text-xs text-red-700 animate-in fade-in">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-            <p className="leading-snug">{errorMsg}</p>
+            <div className="leading-snug space-y-1.5 flex-1">
+              <p>{errorMsg}</p>
+              {unconfirmedEmail && !otpSent && (
+                <button
+                  type="button"
+                  onClick={handleResendUnconfirmedSignupOtp}
+                  disabled={isResending || countdown > 0}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-100/90 text-red-800 hover:bg-red-200 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <RotateCcw className={`w-3 h-3 ${isResending ? 'animate-spin' : ''}`} />
+                  <span>{isResending ? 'Sending Code...' : countdown > 0 ? `Resend Code (${countdown}s)` : 'Resend Confirmation Code'}</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -425,7 +484,7 @@ export const AuthModal: React.FC = () => {
               </div>
             </div>
 
-            {/* A. SIGN UP FORM: Name + Email + Password -> Triggers 6-Digit OTP */}
+            {/* A. SIGN UP FORM: Name + Email + Password -> Triggers 6-Digit Signup Confirmation */}
             {activeTab === 'signup' && (
               <form onSubmit={handleSignUp} className="space-y-3">
                 <div>
@@ -474,12 +533,12 @@ export const AuthModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <span className="text-[10px] text-gray-400 block mt-1">A 6-digit confirmation code will be sent to your email</span>
+                  <span className="text-[10px] text-gray-400 block mt-1">A 6-digit confirmation code will be requested for your email</span>
                 </div>
 
                 <button
@@ -488,7 +547,7 @@ export const AuthModal: React.FC = () => {
                   className="w-full mt-2 py-3 bg-[#0A5C36] hover:bg-[#08482A] text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isLoading ? (
-                    <span>Creating Account &amp; Sending OTP...</span>
+                    <span>Registering Account...</span>
                   ) : (
                     <>
                       <span>Sign Up &amp; Verify Email</span>
@@ -499,10 +558,11 @@ export const AuthModal: React.FC = () => {
               </form>
             )}
 
-            {/* B. SIGN IN FORM: Password or OTP Code */}
+            {/* B. SIGN IN FORM */}
             {activeTab === 'signin' && (
               <div>
                 {!isOtpLoginMode ? (
+                  /* B1. Password Login */
                   <form onSubmit={handleSignIn} className="space-y-3">
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">Email Address</label>
@@ -535,7 +595,7 @@ export const AuthModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                         >
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -560,7 +620,7 @@ export const AuthModal: React.FC = () => {
                     <div className="text-center pt-2">
                       <button
                         type="button"
-                        onClick={() => setIsOtpLoginMode(true)}
+                        onClick={() => { setIsOtpLoginMode(true); resetFormState(); }}
                         className="text-xs text-[#0A5C36] hover:underline font-semibold cursor-pointer"
                       >
                         Sign in with a one-time email code instead
@@ -568,6 +628,7 @@ export const AuthModal: React.FC = () => {
                     </div>
                   </form>
                 ) : (
+                  /* B2. Passwordless Login */
                   <form onSubmit={handlePasswordlessOtpSignIn} className="space-y-3">
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">Email Address</label>
@@ -583,6 +644,7 @@ export const AuthModal: React.FC = () => {
                           className="w-full pl-10 pr-3.5 py-2.5 bg-stone-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0A5C36]/20 focus:border-[#0A5C36]"
                         />
                       </div>
+                      <span className="text-[10px] text-gray-400 block mt-1">We will send a 6-digit login code to your registered email</span>
                     </div>
 
                     <button
@@ -590,13 +652,13 @@ export const AuthModal: React.FC = () => {
                       disabled={isLoading}
                       className="w-full mt-2 py-3 bg-[#0A5C36] hover:bg-[#08482A] text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
                     >
-                      {isLoading ? <span>Sending Code...</span> : <span>Send One-Time Login Code</span>}
+                      {isLoading ? <span>Requesting Code...</span> : <span>Send One-Time Login Code</span>}
                     </button>
 
                     <div className="text-center pt-2">
                       <button
                         type="button"
-                        onClick={() => setIsOtpLoginMode(false)}
+                        onClick={() => { setIsOtpLoginMode(false); resetFormState(); }}
                         className="text-xs text-gray-500 hover:text-gray-800 font-medium cursor-pointer"
                       >
                         Back to Password Sign In
@@ -614,11 +676,21 @@ export const AuthModal: React.FC = () => {
           <form onSubmit={handleVerifyOtp} className="space-y-4 animate-in fade-in">
             {/* Masked Email Banner */}
             <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200 text-center">
-              <span className="text-[11px] text-gray-500 block mb-0.5">Verification code sent to:</span>
+              <span className="text-[11px] text-gray-500 block mb-0.5">
+                {otpFlowType === 'signup' ? 'Signup confirmation requested for:' : 'One-time login code requested for:'}
+              </span>
               <strong className="text-xs text-gray-900 font-mono tracking-wide">{maskEmail(email)}</strong>
               <span className="text-[10px] text-gray-500 block mt-1">
                 Official sender: <strong className="text-gray-700">support@thekeralastore.shop</strong>
               </span>
+            </div>
+
+            {/* Delivery Truthfulness Banner (Task 6) */}
+            <div className="p-2.5 bg-amber-50/70 border border-amber-200/60 rounded-xl text-[11px] text-amber-800 flex items-start gap-2">
+              <Info className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+              <p className="leading-tight">
+                Delivery depends on your email provider and Brevo relay (typically 1–3 minutes). Please be sure to check your <strong>Spam / Junk</strong> folder.
+              </p>
             </div>
 
             <div>
@@ -638,9 +710,6 @@ export const AuthModal: React.FC = () => {
                   className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-gray-300 rounded-xl text-center text-lg font-black tracking-widest text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A5C36]/30 focus:border-[#0A5C36]"
                 />
               </div>
-              <span className="text-[10px] text-gray-400 text-center block mt-1">
-                Please check your inbox or spam folder
-              </span>
             </div>
 
             <button

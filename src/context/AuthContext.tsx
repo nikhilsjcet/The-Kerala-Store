@@ -14,7 +14,7 @@ interface AuthContextType {
   closeOtpModal: () => void;
   loginWithPhone: (phone: string, fullName?: string) => void;
   signInWithEmail: (email: string, password: string) => Promise<{ error: any; data?: any }>;
-  signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error: any; data?: any }>;
+  signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error: any; data?: any; isAlreadyRegistered?: boolean }>;
   signInWithGoogle: () => Promise<{ error?: any; data?: any }>;
   sendEmailOtp: (email: string, fullName?: string, phone?: string) => Promise<{ error: any; data?: any }>;
   verifyEmailOtp: (email: string, token: string, fullName?: string, phone?: string, type?: 'signup' | 'email') => Promise<{ error: any; data?: any }>;
@@ -103,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
-  const signUpWithEmail = async (email: string, pass: string, fullName: string): Promise<{ error: any; data?: any }> => {
+  const signUpWithEmail = async (email: string, pass: string, fullName: string): Promise<{ error: any; data?: any; isAlreadyRegistered?: boolean }> => {
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       if (client) {
@@ -118,7 +118,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             emailRedirectTo: window.location.origin,
           },
         });
-        if (!error && data.user && data.session) {
+
+        // Supabase returns a user with empty identities when the account is already registered and confirmed
+        const isAlreadyRegistered = Boolean(
+          data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0
+        );
+
+        if (!error && data?.user && data?.session) {
           const profile: UserProfile = {
             id: data.user.id,
             email: data.user.email || email.trim().toLowerCase(),
@@ -129,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(profile);
           closeAuthModal();
         }
-        return { data, error };
+        return { data, error, isAlreadyRegistered };
       }
     }
     return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
@@ -150,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
-  // Send 6-Digit Email OTP via Supabase (Brevo SMTP)
+  // Passwordless Email OTP Login: strictly existing users (shouldCreateUser: false)
   const sendEmailOtp = async (
     email: string,
     fullName?: string,
@@ -163,12 +169,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const { data, error } = await client.auth.signInWithOtp({
             email: email.trim().toLowerCase(),
             options: {
-              shouldCreateUser: true,
+              shouldCreateUser: false, // Per Requirement 3: do not create new user during passwordless OTP login
               emailRedirectTo: window.location.origin,
               data: {
                 full_name: fullName?.trim() || email.trim().split('@')[0],
                 phone: phone?.trim() || '',
-                role: 'customer',
               },
             },
           });
@@ -181,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: { message: 'Authentication service is not connected. Please verify your Supabase connection.' } };
   };
 
-  // Verify 6-Digit Email OTP (Supports both signup confirmation and email login OTP)
+  // Verify 6-Digit OTP: strictly maintains distinct flow type ('signup' vs 'email')
   const verifyEmailOtp = async (
     email: string,
     token: string,
@@ -196,25 +201,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const client = getSupabaseClient();
       if (client) {
         try {
-          // Attempt verification with the requested type ('signup' for email registration)
-          let { data, error } = await client.auth.verifyOtp({
+          const { data, error } = await client.auth.verifyOtp({
             email: cleanEmail,
             token: cleanToken,
             type: type,
           });
-
-          // Fallback to 'email' if 'signup' failed (e.g. For magic-link or email-otp users)
-          if (error && type === 'signup') {
-            const fallback = await client.auth.verifyOtp({
-              email: cleanEmail,
-              token: cleanToken,
-              type: 'email',
-            });
-            if (!fallback.error && fallback.data?.user) {
-              data = fallback.data;
-              error = null;
-            }
-          }
 
           if (!error && data?.user) {
             const profile: UserProfile = {
