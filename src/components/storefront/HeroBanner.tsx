@@ -92,20 +92,20 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }
         />
 
         {/* Left Column: Live Animated Text Content (4 Slides) */}
-        <div className="relative z-10 w-[48%] sm:w-[50%] md:w-[49%] h-full pl-3.5 xs:pl-5 sm:pl-8 md:pl-12 pr-1.5 sm:pr-3 py-2.5 xs:py-3 sm:py-4 md:py-5 flex flex-col justify-between">
+        <div className="relative z-10 w-[49%] sm:w-[51%] md:w-[50%] h-full pl-3.5 xs:pl-5 sm:pl-8 md:pl-12 pr-1.5 sm:pr-3 py-2.5 xs:py-3 sm:py-4 md:py-5 flex flex-col justify-between">
           
-          {/* Top: Official TheKeralaStore™ Logo & Subtitle */}
+          {/* Top: Official TheKeralaStore™ Logo (Bigger, bolder brand mark) & Subtitle */}
           <div>
-            <div className="h-5 xs:h-6 sm:h-8 md:h-10 lg:h-11 flex items-center">
+            <div className="h-7 xs:h-8.5 sm:h-11 md:h-13 lg:h-15 flex items-center">
               <img
                 src="/mockup/thekeralastore-logo-hero-clean-transparent.png"
                 alt="TheKeralaStore"
-                className="h-full w-auto object-contain drop-shadow-2xs"
+                className="h-full w-auto object-contain drop-shadow-xs"
               />
             </div>
             <p 
               key={`sub-${currentSlide}`}
-              className="text-[8px] xs:text-[9.5px] sm:text-xs md:text-sm font-bold tracking-wider sm:tracking-[0.22em] text-gray-700 uppercase mt-0.5 sm:mt-1.5 transition-all duration-300 truncate"
+              className="text-[8px] xs:text-[9.5px] sm:text-xs md:text-sm font-bold tracking-wider sm:tracking-[0.22em] text-gray-700 uppercase mt-1 sm:mt-1.5 transition-all duration-300 truncate"
             >
               {slide.subtitle}
             </p>

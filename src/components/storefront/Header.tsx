@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
             onClick={() => onNavigate('home')} 
             className="cursor-pointer select-none flex items-center justify-center flex-1 lg:flex-none py-1"
           >
-            <KeralaStoreLogo size="md" className="h-9 sm:h-11" />
+            <KeralaStoreLogo size="lg" className="h-10 sm:h-12 lg:h-13" />
           </div>
 
           {/* Center Search Bar matching mockup pill shape (Desktop) */}
