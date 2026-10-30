@@ -11,14 +11,14 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }
   const { isAdmin } = useAuth();
 
   return (
-    <section className="max-w-3xl lg:max-w-4xl mx-auto px-3 sm:px-6 py-2 sm:py-3.5 select-none">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-4 select-none">
       {/* 
         Hero Banner Card matching the design given in the user screenshot:
         TheKeralaStore™ - Your One-Stop Store for Everything (Explore, Shop, Live Better)
       */}
       <div 
         onClick={onShopNow}
-        className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs border border-[#E0D5CB] cursor-pointer group hover:shadow-md transition-all active:scale-[0.99] bg-[#ECE2D9] mx-auto w-full"
+        className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs border border-[#E0D5CB] cursor-pointer group hover:shadow-md transition-all active:scale-[0.99] bg-[#ECE2D9] w-full"
       >
         {/* Admin Quick Edit Button */}
         {isAdmin && (
