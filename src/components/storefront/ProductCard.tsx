@@ -43,12 +43,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
         {/* Badges */}
         <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 z-10">
           {product.discount_percentage ? (
-            <span className="bg-[#FF3B80] text-white text-[9px] sm:text-[11px] font-extrabold px-1.5 py-0.5 rounded-full shadow-xs">
+            <span className="bg-[#0A5C36] text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-2xs">
               {product.discount_percentage}% OFF
             </span>
           ) : null}
           {product.is_new_arrival && (
-            <span className="bg-[#0A5C36] text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
+            <span className="bg-[#0A5C36] text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-2xs">
               NEW
             </span>
           )}
@@ -57,14 +57,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
         {/* Wishlist Button */}
         <button
           onClick={handleWishlist}
-          className={`absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full backdrop-blur-md transition-colors z-10 ${
+          className={`absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 rounded-full backdrop-blur-md transition-colors z-10 shadow-2xs ${
             isWishlisted 
-              ? 'bg-pink-50 text-[#FF3B80] shadow-sm' 
-              : 'bg-white/80 text-gray-500 hover:text-[#FF3B80] hover:bg-white'
+              ? 'bg-pink-50 text-[#FF3B80] border border-pink-200' 
+              : 'bg-white/90 text-gray-700 hover:text-[#0A5C36] hover:bg-white border border-gray-100'
           }`}
           aria-label="Wishlist"
         >
-          <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isWishlisted ? 'fill-[#FF3B80]' : ''}`} />
+          <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isWishlisted ? 'fill-[#FF3B80]' : 'stroke-[1.75]'}`} />
         </button>
 
         {/* Stock pill if low */}

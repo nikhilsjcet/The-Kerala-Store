@@ -100,15 +100,16 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }
             </div>
 
             {/* Tagline: Your One-Stop Store for Everything */}
-            <p className="text-base sm:text-lg text-gray-700 font-normal mb-6 tracking-tight">
-              {slide.tagline}
-            </p>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl text-gray-900 font-extrabold mb-4 sm:mb-6 tracking-tight leading-tight">
+              Your One-Stop Store <br className="hidden sm:inline" />
+              for <span className="text-[#0A5C36]">Everything</span>
+            </h1>
 
             {/* Action Button: Dark Green Pill 'Shop Now →' */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <button
                 onClick={onShopNow}
-                className="inline-flex items-center space-x-2 px-7 py-3 rounded-full font-semibold text-xs sm:text-sm text-white bg-[#0B4628] hover:bg-[#07301B] active:scale-98 shadow-sm hover:shadow transition-all group"
+                className="inline-flex items-center space-x-2 px-6 sm:px-7 py-2.5 sm:py-3 rounded-full font-bold text-xs sm:text-sm text-white bg-[#0A5C36] hover:bg-[#064024] active:scale-98 shadow-sm hover:shadow transition-all group"
               >
                 <span>{slide.ctaText}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

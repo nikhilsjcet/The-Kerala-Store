@@ -84,12 +84,37 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* 3. Trust Badges Row (Free Shipping, Secure Payments, Easy Returns, 24/7 Support, Quality Products) */}
       <TrustBadgesBar />
 
-      {/* 4. Triple Bottom Promo Cards (Home Essentials, Electronics & Gadgets, Fashion Collection) */}
+      {/* 4. Best Sellers (Placed directly beneath Trust Badges matching mobile mockup) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+              Best Sellers
+            </h2>
+          </div>
+          <button
+            onClick={() => onNavigate('shop', 'sort=rating')}
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#0A5C36] transition-colors cursor-pointer"
+          >
+            <span>View All</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Product Cards Grid - 2 per row on Mobile, 4 on Desktop */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          {bestSellers.map((p) => (
+            <ProductCard key={p.id} product={p} onSelect={onSelectProduct} />
+          ))}
+        </div>
+      </section>
+
+      {/* 5. Triple Bottom Promo Cards (Home Essentials, Electronics & Gadgets, Fashion Collection) */}
       <PromoCards 
         onSelectPromo={(filter) => onNavigate('shop', `category=${filter}`)} 
       />
 
-      {/* 5. Trending Products Section */}
+      {/* 6. Trending Products Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 border-t border-gray-100">
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 gap-4">
           <div>
@@ -118,39 +143,6 @@ export const HomePage: React.FC<HomePageProps> = ({
           {trendingProducts.map((p) => (
             <ProductCard key={p.id} product={p} onSelect={onSelectProduct} />
           ))}
-        </div>
-      </section>
-
-      {/* 6. Best Sellers & Limited-Time Flash Deals */}
-      <section className="bg-stone-50/70 py-12 sm:py-16 border-y border-stone-200/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 gap-4">
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">
-                <Sparkles className="w-4 h-4" />
-                Verified Quality
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-                Best Sellers in India
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Loved by thousands of shoppers across Kottayam, Kerala &amp; all over India
-              </p>
-            </div>
-            <button
-              onClick={() => onNavigate('shop', 'sort=rating')}
-              className="inline-flex items-center gap-1 text-sm font-bold text-[#0B4628] hover:underline"
-            >
-              <span>Explore top rated</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {bestSellers.map((p) => (
-              <ProductCard key={p.id} product={p} onSelect={onSelectProduct} />
-            ))}
-          </div>
         </div>
       </section>
 
