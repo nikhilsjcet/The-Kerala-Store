@@ -94,9 +94,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }
         {/* Left Column: Live Animated Text Content (4 Slides) */}
         <div className="relative z-10 w-[49%] sm:w-[51%] md:w-[50%] h-full pl-3.5 xs:pl-5 sm:pl-8 md:pl-12 pr-1.5 sm:pr-3 py-2.5 xs:py-3 sm:py-4 md:py-5 flex flex-col justify-between">
           
-          {/* Top: Official TheKeralaStore™ Logo (Bigger, bolder brand mark) & Subtitle */}
+          {/* Top: Official TheKeralaStore™ Logo (Enlarged prominent brand name & mark) & Subtitle */}
           <div>
-            <div className="h-7 xs:h-8.5 sm:h-11 md:h-13 lg:h-15 flex items-center">
+            <div className="h-8 xs:h-9.5 sm:h-12 md:h-15 lg:h-[64px] flex items-center">
               <img
                 src="/mockup/thekeralastore-logo-hero-clean-transparent.png"
                 alt="TheKeralaStore"
