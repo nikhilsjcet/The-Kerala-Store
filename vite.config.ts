@@ -222,9 +222,65 @@ function meeshoExtractorPlugin(): Plugin {
   };
 }
 
+function razorpayDevPlugin(): Plugin {
+  return {
+    name: 'razorpay-dev-plugin',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url && (req.url.startsWith('/api/create-order') || req.url.startsWith('/api/verify-payment'))) {
+          let bodyStr = '';
+          req.on('data', (chunk) => {
+            bodyStr += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              let parsedBody = {};
+              try {
+                parsedBody = bodyStr ? JSON.parse(bodyStr) : {};
+              } catch {}
+
+              res.setHeader('Content-Type', 'application/json');
+              const mockRes = {
+                setHeader: (k: string, v: string) => res.setHeader(k, v),
+                status: (code: number) => {
+                  res.statusCode = code;
+                  return {
+                    json: (data: any) => res.end(JSON.stringify(data)),
+                    end: () => res.end(),
+                  };
+                },
+              };
+
+              const mockReq = {
+                method: req.method,
+                body: parsedBody,
+              };
+
+              if (req.url?.startsWith('/api/create-order')) {
+                const { default: handler } = await import('./api/create-order.js');
+                await handler(mockReq, mockRes);
+                return;
+              } else if (req.url?.startsWith('/api/verify-payment')) {
+                const { default: handler } = await import('./api/verify-payment.js');
+                await handler(mockReq, mockRes);
+                return;
+              }
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), meeshoExtractorPlugin()],
+  plugins: [react(), meeshoExtractorPlugin(), razorpayDevPlugin()],
   resolve: {
     preserveSymlinks: true,
     alias: {

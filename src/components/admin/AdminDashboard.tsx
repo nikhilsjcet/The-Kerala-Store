@@ -669,15 +669,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const resolvedPhone = digits.length === 10 ? `+91 ${digits}` : (o.customer_phone || '');
       const existing = map.get(key) || (cleanEmail ? map.get(cleanEmail) : undefined) || (digits ? map.get(digits) : undefined);
 
+      const isRegistrationRow = (o.order_number && o.order_number.startsWith('REG-')) || o.notes === 'REGISTERED_CUSTOMER_MEMBER';
+
       if (existing) {
-        existing.orderCount += 1;
-        existing.totalSpent += (o.total_amount || 0);
-        if (!existing.orderNumbers.includes(o.order_number)) {
-          existing.orderNumbers.push(o.order_number);
+        if (!isRegistrationRow) {
+          existing.orderCount += 1;
+          existing.totalSpent += (o.total_amount || 0);
+          if (!existing.orderNumbers.includes(o.order_number)) {
+            existing.orderNumbers.push(o.order_number);
+          }
         }
         if (new Date(o.created_at) > new Date(existing.lastOrderDate)) {
           existing.lastOrderDate = o.created_at;
-          if (o.shipping_address) existing.address = o.shipping_address;
+          if (o.shipping_address && !isRegistrationRow) existing.address = o.shipping_address;
           if (resolvedName && resolvedName !== 'Customer') existing.name = resolvedName;
           if (resolvedPhone) existing.phone = resolvedPhone;
           if (cleanEmail) existing.email = cleanEmail;
@@ -688,13 +692,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           name: resolvedName,
           phone: resolvedPhone,
           email: cleanEmail,
-          address: o.shipping_address,
-          orderCount: 1,
-          totalSpent: o.total_amount || 0,
+          address: isRegistrationRow ? undefined : o.shipping_address,
+          orderCount: isRegistrationRow ? 0 : 1,
+          totalSpent: isRegistrationRow ? 0 : (o.total_amount || 0),
           lastOrderDate: o.created_at,
           joinedDate: o.created_at,
-          orderNumbers: [o.order_number],
-          isRegistered: false,
+          orderNumbers: isRegistrationRow ? [] : [o.order_number],
+          isRegistered: isRegistrationRow,
         });
       }
     });
@@ -703,6 +707,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       (a, b) => new Date(b.lastOrderDate).getTime() - new Date(a.lastOrderDate).getTime()
     );
   }, [orders, registeredCustomers]);
+
+  const realOrders = React.useMemo(() => {
+    return orders.filter(
+      (o) => !o.order_number?.startsWith('REG-') && o.notes !== 'REGISTERED_CUSTOMER_MEMBER'
+    );
+  }, [orders]);
 
   const filteredCustomers = React.useMemo(() => {
     const q = searchCustomer.trim().toLowerCase();
@@ -719,8 +729,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const filteredOrders = React.useMemo(() => {
     const q = searchOrder.trim().toLowerCase();
-    if (!q) return orders;
-    return orders.filter(
+    if (!q) return realOrders;
+    return realOrders.filter(
       (o) =>
         o.order_number.toLowerCase().includes(q) ||
         o.customer_name.toLowerCase().includes(q) ||
@@ -728,7 +738,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         (o.supplier_order_ref && o.supplier_order_ref.toLowerCase().includes(q)) ||
         (o.tracking_number && o.tracking_number.toLowerCase().includes(q))
     );
-  }, [orders, searchOrder]);
+  }, [realOrders, searchOrder]);
 
   const handleCopyAddressForMeesho = (ord: Order) => {
     const addr = ord.shipping_address || ({} as any);
@@ -978,7 +988,7 @@ Pincode: ${addr.pincode || ''}`;
             activeTab === 'orders' ? 'bg-[#0A5C36] text-white' : 'bg-gray-100 text-gray-700'
           }`}
         >
-          Orders ({orders.length})
+          Orders ({realOrders.length})
         </button>
         <button
           onClick={() => setActiveTab('categories')}
@@ -1066,7 +1076,7 @@ Pincode: ${addr.pincode || ''}`;
             <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
               activeTab === 'orders' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
             }`}>
-              {orders.length}
+              {realOrders.length}
             </span>
           </button>
 
@@ -1504,7 +1514,7 @@ Pincode: ${addr.pincode || ''}`;
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">
-                    Customer Orders &amp; Dropship Dispatch ({orders.length})
+                    Customer Orders &amp; Dropship Dispatch ({realOrders.length})
                   </h2>
                   <p className="text-xs text-gray-500">
                     Copy customer addresses for Meesho, enter courier waybills, and update live tracking

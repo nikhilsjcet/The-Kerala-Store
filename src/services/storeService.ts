@@ -756,7 +756,10 @@ export class StoreService {
     if (!userId && !customerEmail) {
       return []; // Real customer empty state when not authenticated
     }
-    return await this.getOrders(userId, customerEmail);
+    const orders = await this.getOrders(userId, customerEmail);
+    return orders.filter(
+      (o) => !o.order_number.startsWith('REG-') && o.notes !== 'REGISTERED_CUSTOMER_MEMBER'
+    );
   }
 
   // Admin orders: all store orders for Admin Dashboard
@@ -970,7 +973,10 @@ export class StoreService {
 
   // --- ANALYTICS ---
   static async getAnalytics() {
-    const orders = await this.getOrders();
+    const allOrders = await this.getOrders();
+    const orders = allOrders.filter(
+      (o) => !o.order_number.startsWith('REG-') && o.notes !== 'REGISTERED_CUSTOMER_MEMBER'
+    );
     const products = await this.getAllAdminProducts();
 
     const totalRevenue = orders.reduce((sum, o) => sum + (o.payment_status === 'completed' || o.payment_method === 'cod' ? o.total_amount : 0), 0);
@@ -1032,7 +1038,7 @@ export class StoreService {
       source: cust.source || 'google',
     };
 
-    // 1. If Supabase is connected, upsert into customers table
+    // 1. If Supabase is connected, record in customers table & sync membership to cloud orders table
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       if (client) {
@@ -1049,14 +1055,46 @@ export class StoreService {
             payload.id = customerRecord.id;
           }
 
-          const { error } = await client.from('customers').upsert(payload, { onConflict: 'email' });
-          if (error) {
-            // If table doesn't exist, try 'profiles' table
-            if (error.code === '42P01' || error.message?.includes('does not exist')) {
-              try {
-                await client.from('profiles').upsert(payload, { onConflict: 'email' });
-              } catch {}
-            }
+          // Try dedicated table first if created
+          try {
+            await client.from('customers').upsert(payload, { onConflict: 'email' });
+          } catch {}
+
+          // In addition, ensure customer membership is recorded in Supabase cloud orders table
+          const { data: existingRecords } = await client
+            .from('orders')
+            .select('id')
+            .ilike('customer_email', cleanEmail)
+            .limit(1);
+
+          if (!existingRecords || existingRecords.length === 0) {
+            const regOrder = {
+              order_number: `REG-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+              user_id: isValidUUID(customerRecord.id) ? customerRecord.id : null,
+              customer_name: customerRecord.full_name,
+              customer_email: cleanEmail,
+              customer_phone: customerRecord.phone || '',
+              shipping_address: {
+                fullName: customerRecord.full_name,
+                email: cleanEmail,
+                phone: customerRecord.phone || '',
+                addressLine1: 'Registered Customer Member',
+                city: 'Kerala',
+                state: 'Kerala',
+                pincode: '',
+              },
+              subtotal: 0,
+              discount_amount: 0,
+              shipping_fee: 0,
+              total_amount: 0,
+              payment_method: 'cod',
+              payment_status: 'pending',
+              fulfilment_status: 'pending',
+              notes: 'REGISTERED_CUSTOMER_MEMBER',
+              created_at: customerRecord.created_at,
+              updated_at: new Date().toISOString(),
+            };
+            await client.from('orders').insert(regOrder);
           }
         } catch (dbErr) {
           console.warn('Could not sync customer to Supabase:', dbErr);
@@ -1094,7 +1132,7 @@ export class StoreService {
             .select('*')
             .order('created_at', { ascending: false });
 
-          if (!error && Array.isArray(data)) {
+          if (!error && Array.isArray(data) && data.length > 0) {
             list = data.map((d: any) => ({
               id: d.id,
               email: d.email,
@@ -1106,19 +1144,23 @@ export class StoreService {
               source: 'google',
             }));
           } else {
-            // Try fallback table 'profiles'
-            const profRes = await client.from('profiles').select('*');
-            if (!profRes.error && Array.isArray(profRes.data)) {
-              list = profRes.data.map((d: any) => ({
-                id: d.id,
-                email: d.email,
-                full_name: d.full_name || d.name || d.email?.split('@')[0],
-                phone: d.phone || '',
-                avatar_url: d.avatar_url || '',
-                created_at: d.created_at || new Date().toISOString(),
-                last_sign_in_at: d.last_sign_in_at,
-                source: 'google',
-              }));
+            // Also fetch from registration rows in orders table
+            const { data: regRows } = await client
+              .from('orders')
+              .select('*')
+              .or('order_number.ilike.REG-%,notes.eq.REGISTERED_CUSTOMER_MEMBER');
+
+            if (Array.isArray(regRows)) {
+              regRows.forEach((r: any) => {
+                list.push({
+                  id: r.user_id || r.id,
+                  email: r.customer_email,
+                  full_name: r.customer_name,
+                  phone: r.customer_phone || '',
+                  created_at: r.created_at,
+                  source: 'google',
+                });
+              });
             }
           }
         } catch (dbErr) {

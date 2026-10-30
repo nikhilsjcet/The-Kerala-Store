@@ -181,52 +181,110 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
         onOrderSuccess(newOrder);
       };
 
-      // Real Razorpay Checkout flow if configured, else simulation
+      // Razorpay Online Payment Flow
       if (paymentMethod === 'razorpay') {
-        const configuredKey = localStorage.getItem('tks_razorpay_key_id') || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
-        const isRealKey = configuredKey && (configuredKey.startsWith('rzp_test_') || configuredKey.startsWith('rzp_live_')) && !configuredKey.includes('demo');
+        const amountPaise = Math.round(verifiedTotal * 100); // 1 INR = 100 paise
 
-        if (isRealKey && typeof (window as any).Razorpay === 'function') {
-          const options = {
-            key: configuredKey,
-            amount: Math.round(verifiedTotal * 100), // in paise (1 INR = 100 paise)
-            currency: 'INR',
-            name: 'The Kerala Store',
-            description: `Payment for ${orderItems.length} item(s)`,
-            prefill: {
-              name: formData.fullName,
-              email: formData.email,
-              contact: formData.phone,
-            },
-            theme: {
-              color: '#0A5C36',
-            },
-            handler: async function (response: any) {
-              try {
-                await createFinalOrder(response.razorpay_payment_id);
-              } catch (err: any) {
-                setErrorMessage(err?.message || 'Failed to complete order after payment.');
-                setIsSubmitting(false);
-              }
-            },
-            modal: {
-              ondismiss: function () {
-                setIsSubmitting(false);
-              },
-            },
-          };
-
-          const rzp = new (window as any).Razorpay(options);
-          rzp.on('payment.failed', function (resp: any) {
-            setErrorMessage(`Payment failed: ${resp.error?.description || 'Transaction declined'}`);
-            setIsSubmitting(false);
-          });
-          rzp.open();
+        if (amountPaise < 100) {
+          setErrorMessage('Minimum amount for Razorpay checkout is ₹1.00 (100 paise).');
+          setIsSubmitting(false);
           return;
         }
 
-        // Fallback simulation mode if key is demo
-        await createFinalOrder(`rzp_sim_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`);
+        // STEP 1: BACKEND - Create Order via POST /api/create-order
+        let orderData: { order_id: string; amount: number; currency: string };
+        try {
+          const createOrderRes = await fetch('/api/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: amountPaise,
+              currency: 'INR',
+              receipt: `rcpt_${Date.now()}`,
+            }),
+          });
+
+          if (!createOrderRes.ok) {
+            const errJson = await createOrderRes.json().catch(() => ({}));
+            throw new Error(errJson.error || `Failed to create order on payment server (HTTP ${createOrderRes.status})`);
+          }
+
+          orderData = await createOrderRes.json();
+          if (!orderData?.order_id) {
+            throw new Error('Order creation did not return a valid order ID');
+          }
+        } catch (apiErr: any) {
+          console.error('Razorpay order creation error:', apiErr);
+          setErrorMessage(apiErr?.message || 'Unable to connect to payment server. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // STEP 2: FRONTEND - Open Razorpay Modal with order_id
+        if (typeof (window as any).Razorpay !== 'function') {
+          setErrorMessage('Payment gateway script is still loading. Please check your network and refresh.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const configuredKey = localStorage.getItem('tks_razorpay_key_id') || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TtpS43wnngezRy';
+
+        const options = {
+          key: configuredKey,
+          amount: orderData.amount,
+          currency: orderData.currency || 'INR',
+          name: 'The Kerala Store',
+          description: `Payment for ${orderItems.length} item(s)`,
+          order_id: orderData.order_id,
+          prefill: {
+            name: formData.fullName,
+            email: formData.email,
+            contact: formData.phone,
+          },
+          theme: {
+            color: '#0A5C36',
+          },
+          handler: async function (response: any) {
+            try {
+              // STEP 3: BACKEND - Verify payment signature
+              const verifyRes = await fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                }),
+              });
+
+              const verifyData = await verifyRes.json().catch(() => ({}));
+
+              if (!verifyRes.ok || !verifyData.success) {
+                setErrorMessage(verifyData.error || 'Payment signature verification failed. Order was not completed.');
+                setIsSubmitting(false);
+                return;
+              }
+
+              // Signature verified successfully -> finalize order
+              await createFinalOrder(response.razorpay_payment_id);
+            } catch (verErr: any) {
+              setErrorMessage(verErr?.message || 'Payment verification encountered an unexpected error.');
+              setIsSubmitting(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setIsSubmitting(false);
+            },
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (resp: any) {
+          setErrorMessage(`Payment failed: ${resp.error?.description || 'Transaction declined'}`);
+          setIsSubmitting(false);
+        });
+        rzp.open();
         return;
       }
 
