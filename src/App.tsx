@@ -18,11 +18,13 @@ import { ProductDetailsPage } from './pages/ProductDetailsPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { WishlistPage } from './pages/WishlistPage';
+import { PoliciesPage } from './pages/PoliciesPage';
+import { TermsPage } from './pages/TermsPage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminLoginView } from './components/admin/AdminLoginView';
 import { Product, Order } from './types';
 
-const getInitialPage = (): 'home' | 'shop' | 'product-details' | 'checkout' | 'orders' | 'wishlist' | 'admin' => {
+const getInitialPage = (): 'home' | 'shop' | 'product-details' | 'checkout' | 'orders' | 'wishlist' | 'admin' | 'policies' | 'terms' => {
   if (typeof window === 'undefined') return 'home';
   const rawPath = window.location.pathname.toLowerCase().trim();
   const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
@@ -50,6 +52,29 @@ const getInitialPage = (): 'home' | 'shop' | 'product-details' | 'checkout' | 'o
   if (path === '/shop' || search.includes('page=shop') || hash === '#shop') {
     return 'shop';
   }
+  if (
+    path === '/policies' || 
+    path === '/policy' || 
+    path === '/privacy' || 
+    path === '/shipping-policy' || 
+    path === '/return-policy' || 
+    search.includes('page=policies') || 
+    hash === '#policies'
+  ) {
+    return 'policies';
+  }
+  if (
+    path === '/terms' || 
+    path === '/term' || 
+    path === '/terms-of-service' || 
+    path === '/terms-conditions' || 
+    search.includes('page=terms') || 
+    search.includes('page=term') || 
+    hash === '#terms' || 
+    hash === '#term'
+  ) {
+    return 'terms';
+  }
   // Support product details reload/direct load without resetting to home
   if (path.startsWith('/product/') || path.startsWith('/products/') || search.includes('product=')) {
     return 'product-details';
@@ -73,7 +98,7 @@ const getInitialProductSlug = (): string => {
 };
 
 const MainApp: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product-details' | 'checkout' | 'orders' | 'wishlist' | 'admin'>(getInitialPage);
+  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product-details' | 'checkout' | 'orders' | 'wishlist' | 'admin' | 'policies' | 'terms'>(getInitialPage);
   const [selectedProductSlug, setSelectedProductSlug] = useState<string>(getInitialProductSlug);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
   const [activeSearchQuery, setActiveSearchQuery] = useState<string>('');
@@ -174,6 +199,12 @@ const MainApp: React.FC = () => {
     } else if (page === 'admin') {
       window.history.pushState({ page: 'admin' }, '', '/nikhil');
       setCurrentPage('admin');
+    } else if (page === 'policies') {
+      window.history.pushState({ page: 'policies', param }, '', '/policies' + (param ? `?tab=${param}` : ''));
+      setCurrentPage('policies');
+    } else if (page === 'terms' || page === 'term') {
+      window.history.pushState({ page: 'terms' }, '', '/terms');
+      setCurrentPage('terms');
     }
   };
 
@@ -294,14 +325,29 @@ const MainApp: React.FC = () => {
             onSelectProduct={handleSelectProduct}
           />
         )}
+
+        {currentPage === 'policies' && (
+          <PoliciesPage
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentPage === 'terms' && (
+          <TermsPage
+            onNavigate={handleNavigate}
+          />
+        )}
       </main>
 
       {/* 5. Footer */}
       <Footer
         onNavigateCategory={handleSelectCategoryFromNav}
+        onNavigatePage={handleNavigate}
         onOpenPolicy={(policy) => {
           if (policy === 'track') handleNavigate('orders');
           else if (policy === 'admin') handleNavigate('admin');
+          else if (policy === 'terms' || policy === 'term') handleNavigate('terms');
+          else if (policy === 'shipping' || policy === 'returns' || policy === 'privacy' || policy === 'policies') handleNavigate('policies', policy);
           else setInfoModalType(policy);
         }}
       />

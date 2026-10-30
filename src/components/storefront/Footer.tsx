@@ -15,9 +15,10 @@ import {
 interface FooterProps {
   onNavigateCategory: (slug: string) => void;
   onOpenPolicy: (policyName: string) => void;
+  onNavigatePage?: (page: string, param?: string) => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigateCategory, onOpenPolicy }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigateCategory, onOpenPolicy, onNavigatePage }) => {
   return (
     <footer className="bg-white border-t border-gray-200 text-[#191C1E] pt-14 pb-10 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -171,33 +172,78 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateCategory, onOpenPolicy
           {/* Column 4: Policy */}
           <div>
             <h4 className="text-base font-bold text-gray-900 tracking-tight mb-4">
-              Policy
+              Policy &amp; Legal
             </h4>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>
-                <button onClick={() => onOpenPolicy('shipping')} className="hover:text-[#0A5C36] transition-colors">
-                  Shipping &amp; Returns
-                </button>
+                <a
+                  href="/policies"
+                  onClick={(e) => {
+                    if (onNavigatePage) {
+                      e.preventDefault();
+                      onNavigatePage('policies', 'shipping');
+                    }
+                  }}
+                  className="hover:text-[#0A5C36] transition-colors"
+                >
+                  Shipping &amp; Delivery Policy
+                </a>
               </li>
               <li>
-                <button onClick={() => onOpenPolicy('terms')} className="hover:text-[#0A5C36] transition-colors">
-                  Terms &amp; Conditions
-                </button>
+                <a
+                  href="/policies"
+                  onClick={(e) => {
+                    if (onNavigatePage) {
+                      e.preventDefault();
+                      onNavigatePage('policies', 'returns');
+                    }
+                  }}
+                  className="hover:text-[#0A5C36] transition-colors"
+                >
+                  Returns &amp; Refunds Policy
+                </a>
               </li>
               <li>
-                <button onClick={() => onOpenPolicy('payments')} className="hover:text-[#0A5C36] transition-colors">
-                  Payment Methods
-                </button>
+                <a
+                  href="/terms"
+                  onClick={(e) => {
+                    if (onNavigatePage) {
+                      e.preventDefault();
+                      onNavigatePage('terms');
+                    }
+                  }}
+                  className="hover:text-[#0A5C36] transition-colors"
+                >
+                  Terms of Service (/term)
+                </a>
               </li>
               <li>
-                <button onClick={() => onOpenPolicy('faq')} className="hover:text-[#0A5C36] transition-colors">
-                  FAQ
-                </button>
-              </li>
-              <li>
-                <button onClick={() => onOpenPolicy('privacy')} className="hover:text-[#0A5C36] transition-colors">
+                <a
+                  href="/policies"
+                  onClick={(e) => {
+                    if (onNavigatePage) {
+                      e.preventDefault();
+                      onNavigatePage('policies', 'privacy');
+                    }
+                  }}
+                  className="hover:text-[#0A5C36] transition-colors"
+                >
                   Privacy Policy
-                </button>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/policies"
+                  onClick={(e) => {
+                    if (onNavigatePage) {
+                      e.preventDefault();
+                      onNavigatePage('policies');
+                    }
+                  }}
+                  className="hover:text-[#0A5C36] transition-colors font-medium text-[#0A5C36]"
+                >
+                  All Store Policies (/policies) &rarr;
+                </a>
               </li>
             </ul>
           </div>
