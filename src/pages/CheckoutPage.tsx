@@ -192,7 +192,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
         }
 
         // STEP 1: BACKEND - Create Order via POST /api/create-order
-        let orderData: { order_id: string; amount: number; currency: string };
+        let orderData: { order_id: string; amount: number; currency: string; key_id?: string };
         try {
           const createOrderRes = await fetch('/api/create-order', {
             method: 'POST',
@@ -227,7 +227,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
           return;
         }
 
-        const configuredKey = localStorage.getItem('tks_razorpay_key_id') || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TtpS43wnngezRy';
+        const configuredKey = orderData.key_id || localStorage.getItem('tks_razorpay_key_id') || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TtpS43wnngezRy';
 
         const options = {
           key: configuredKey,
