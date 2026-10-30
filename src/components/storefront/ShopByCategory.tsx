@@ -58,31 +58,32 @@ export const ShopByCategory: React.FC<ShopByCategoryProps> = ({ onSelectCategory
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = direction === 'left' ? -280 : 280;
+      const scrollAmount = direction === 'left' ? -300 : 300;
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
   return (
-    <section className="bg-white py-4 sm:py-7 border-b border-gray-100 select-none">
+    <section className="bg-white py-5 sm:py-8 border-b border-gray-100 select-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header row: Shop by Category | Desktop Arrows | View All -> */}
-        <div className="flex items-center justify-between mb-3.5 sm:mb-5">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-gray-900 tracking-tight">
+        {/* Header row: Shop by Category | View All -> */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-1.5 h-6 bg-[#0A5C36] rounded-full hidden sm:block" />
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
               Shop by Category
             </h2>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Desktop scroll arrows */}
-            <div className="hidden sm:flex items-center gap-1.5 mr-1">
+            {/* Tablet scroll arrows */}
+            <div className="hidden sm:flex lg:hidden items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => scroll('left')}
                 aria-label="Scroll left"
-                className="w-7 h-7 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-black flex items-center justify-center transition-colors shadow-2xs cursor-pointer active:scale-95"
+                className="w-8 h-8 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 flex items-center justify-center transition-colors shadow-2xs cursor-pointer active:scale-95"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -90,7 +91,7 @@ export const ShopByCategory: React.FC<ShopByCategoryProps> = ({ onSelectCategory
                 type="button"
                 onClick={() => scroll('right')}
                 aria-label="Scroll right"
-                className="w-7 h-7 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-black flex items-center justify-center transition-colors shadow-2xs cursor-pointer active:scale-95"
+                className="w-8 h-8 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 flex items-center justify-center transition-colors shadow-2xs cursor-pointer active:scale-95"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -99,46 +100,52 @@ export const ShopByCategory: React.FC<ShopByCategoryProps> = ({ onSelectCategory
             {/* View All Button */}
             <button
               onClick={() => onSelectCategory('all')}
-              className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#0A5C36] transition-colors cursor-pointer group"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#0A5C36] transition-colors cursor-pointer group"
             >
               <span>View All</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-[#0A5C36]" />
             </button>
           </div>
         </div>
 
-        {/* Premium Tall Rounded Category Cards matching mockup screenshot */}
+        {/* 
+          Category Listing:
+          - Mobile / Tablet: Silky-smooth horizontal swipe with snap points & peek-ahead
+          - Desktop (lg:): Complete 9-column grid where all departments are listed simultaneously side-by-side
+        */}
         <div 
           ref={scrollRef}
-          className="flex gap-2.5 sm:gap-4 overflow-x-auto scrollbar-none pb-2 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth"
+          className="flex lg:grid lg:grid-cols-9 gap-2.5 sm:gap-3.5 overflow-x-auto lg:overflow-visible scrollbar-none pb-2 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth"
         >
           {CIRCULAR_CATEGORIES.map((cat) => (
             <div
               key={cat.slug}
               onClick={() => onSelectCategory(cat.slug)}
-              className="group flex-shrink-0 w-[108px] sm:w-[128px] h-[146px] sm:h-[168px] bg-[#FAF8F5] hover:bg-[#F3EFE8] border border-[#EBE5DE] hover:border-[#0A5C36]/60 rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col items-center justify-between text-center cursor-pointer select-none transition-all duration-300 shadow-2xs hover:shadow-md hover:-translate-y-1 active:scale-95"
+              className="group relative flex-shrink-0 snap-start w-[102px] xs:w-[110px] sm:w-[124px] lg:w-full h-[146px] xs:h-[154px] sm:h-[172px] lg:h-[180px] bg-[#FAF7F2] hover:bg-[#F2ECE3] border border-[#ECE4D8] hover:border-[#0A5C36]/50 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 flex flex-col items-center justify-between text-center cursor-pointer select-none transition-all duration-300 shadow-2xs hover:shadow-lg hover:-translate-y-1.5 active:scale-95"
             >
-              {/* High-res category image with warm stone & green leaves */}
-              <div className="w-full h-[94px] sm:h-[110px] rounded-xl sm:rounded-2xl overflow-hidden flex items-center justify-center p-0.5 relative">
+              {/* High-res category photo with soft natural blending */}
+              <div className="w-full h-[96px] xs:h-[102px] sm:h-[116px] lg:h-[122px] rounded-xl sm:rounded-2xl overflow-hidden flex items-center justify-center p-0.5 relative">
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="w-full h-full object-cover rounded-xl sm:rounded-2xl group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-cover rounded-xl sm:rounded-2xl group-hover:scale-108 transition-transform duration-500 ease-out"
                   loading="lazy"
                 />
               </div>
 
-              {/* Bold Category label */}
-              <span className="text-[11px] sm:text-[12.5px] font-bold text-gray-900 group-hover:text-[#0A5C36] transition-colors leading-tight line-clamp-2 w-full px-0.5 mt-1">
-                {cat.name}
-              </span>
+              {/* Bold Category Label */}
+              <div className="w-full py-1 sm:py-1.5 flex flex-col items-center justify-center">
+                <span className="text-[11px] xs:text-[11.5px] sm:text-xs lg:text-[13px] font-bold text-gray-900 group-hover:text-[#0A5C36] transition-colors leading-[1.2] line-clamp-2 w-full px-0.5">
+                  {cat.name}
+                </span>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Carousel indicator dots underneath matching screenshot */}
-        <div className="flex justify-center items-center gap-1.5 mt-3.5 sm:mt-5">
-          <span className="w-6 sm:w-7 h-1.5 bg-[#0A5C36] rounded-full" />
+        {/* Carousel indicator dots underneath on mobile */}
+        <div className="flex lg:hidden justify-center items-center gap-1.5 mt-3.5 sm:mt-5">
+          <span className="w-7 h-1.5 bg-[#0A5C36] rounded-full" />
           <span className="w-1.5 h-1.5 bg-gray-300 rounded-full" />
           <span className="w-1.5 h-1.5 bg-gray-300 rounded-full" />
           <span className="w-1.5 h-1.5 bg-gray-300 rounded-full" />
