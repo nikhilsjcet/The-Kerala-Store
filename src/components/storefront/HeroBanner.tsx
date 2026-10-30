@@ -91,12 +91,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }
           loading="eager"
         />
 
-        {/* Left Column: Live Animated Text Content (4 Slides) strictly in left 46% */}
-        <div className="relative z-10 w-[46%] sm:w-[48%] md:w-[48%] h-full pl-3 xs:pl-4 sm:pl-8 md:pl-12 pr-1 sm:pr-2 py-2 xs:py-2.5 sm:py-4 md:py-5 flex flex-col justify-between">
+        {/* Left Column: Live Animated Text Content (4 Slides) */}
+        <div className="relative z-10 w-[48%] sm:w-[50%] md:w-[49%] h-full pl-3.5 xs:pl-5 sm:pl-8 md:pl-12 pr-1.5 sm:pr-3 py-2.5 xs:py-3 sm:py-4 md:py-5 flex flex-col justify-between">
           
           {/* Top: Official TheKeralaStore™ Logo & Subtitle */}
           <div>
-            <div className="h-4 xs:h-5 sm:h-7 md:h-9 flex items-center">
+            <div className="h-5 xs:h-6 sm:h-8 md:h-10 lg:h-11 flex items-center">
               <img
                 src="/mockup/thekeralastore-logo-hero-clean-transparent.png"
                 alt="TheKeralaStore"
@@ -105,17 +105,17 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }
             </div>
             <p 
               key={`sub-${currentSlide}`}
-              className="text-[6.5px] xs:text-[7.5px] sm:text-[10px] md:text-xs font-bold tracking-wider sm:tracking-[0.2em] text-gray-700 uppercase mt-0.5 sm:mt-1.5 transition-all duration-300 truncate"
+              className="text-[8px] xs:text-[9.5px] sm:text-xs md:text-sm font-bold tracking-wider sm:tracking-[0.22em] text-gray-700 uppercase mt-0.5 sm:mt-1.5 transition-all duration-300 truncate"
             >
               {slide.subtitle}
             </p>
           </div>
 
-          {/* Center: Dynamic Animated Headline (Changes automatically like 4 slides) */}
+          {/* Center: Dynamic Animated Headline (Bigger, bolder typography) */}
           <div className="my-auto py-0.5 sm:py-1">
             <h1 
               key={`title-${currentSlide}`}
-              className="text-[10px] xs:text-[12px] sm:text-lg md:text-2xl lg:text-[27px] font-black text-gray-950 tracking-tight leading-[1.12] transition-opacity duration-300"
+              className="text-[12px] xs:text-[14.5px] sm:text-xl md:text-[27px] lg:text-[32px] xl:text-[35px] font-black text-gray-950 tracking-tight leading-[1.14] transition-opacity duration-300"
             >
               {slide.line1} <br />
               {slide.line2Prefix}
@@ -124,15 +124,15 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }
           </div>
 
           {/* Bottom: Shop Now Button & 4 Interactive Pagination Dots */}
-          <div className="space-y-1 sm:space-y-2">
+          <div className="space-y-1 xs:space-y-1.5 sm:space-y-2.5">
             <div>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onShopNow(); }}
-                className="bg-[#0A5C36] hover:bg-[#074628] text-white px-2.5 xs:px-3 sm:px-5 md:px-6 py-0.5 xs:py-1 sm:py-1.5 md:py-2 rounded-full font-bold text-[8.5px] xs:text-[9.5px] sm:text-xs md:text-sm shadow-xs hover:shadow active:scale-95 transition-all inline-flex items-center gap-1 sm:gap-1.5 cursor-pointer"
+                className="bg-[#0A5C36] hover:bg-[#074628] text-white px-3 xs:px-3.5 sm:px-5 md:px-6 py-1 xs:py-1.5 sm:py-2 rounded-full font-bold text-[9.5px] xs:text-[11px] sm:text-xs md:text-sm shadow-xs hover:shadow active:scale-95 transition-all inline-flex items-center gap-1 sm:gap-1.5 cursor-pointer"
               >
                 <span>{slide.ctaText}</span>
-                <ArrowRight className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
 
@@ -144,10 +144,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setCurrentSlide(idx); }}
                   aria-label={`Go to slide ${idx + 1}`}
-                  className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  className={`h-1 xs:h-1.5 sm:h-2 rounded-full transition-all duration-300 cursor-pointer ${
                     idx === currentSlide
-                      ? 'w-3.5 sm:w-6 bg-[#0A5C36]'
-                      : 'w-1 sm:w-2 bg-gray-400/60 hover:bg-gray-600'
+                      ? 'w-4 xs:w-5 sm:w-7 bg-[#0A5C36]'
+                      : 'w-1.5 xs:w-2 sm:w-2.5 bg-gray-400/60 hover:bg-gray-600'
                   }`}
                 />
               ))}
