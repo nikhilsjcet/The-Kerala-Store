@@ -622,7 +622,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
 
       const digits = (rc.phone || '').replace(/\D/g, '').slice(-10);
-      const key = digits || emailLower || rc.id;
+      const key = emailLower;
       if (!key) return;
 
       map.set(key, {
@@ -661,13 +661,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const cleanEmail = emailLower || (o.shipping_address as any)?.email?.trim().toLowerCase() || '';
       const cleanUserId = (o.user_id || '').trim();
 
-      // Primary grouping key: 10-digit phone > email > user_id > name
-      const key = digits || cleanEmail || cleanUserId || nameLower || o.id;
+      // Primary grouping key: email (primary customer identity) > phone (only if no email) > user_id > order id
+      const key = cleanEmail || (digits ? `phone:${digits}` : (cleanUserId ? `user:${cleanUserId}` : o.id));
       if (!key) return;
 
       const resolvedName = o.customer_name?.trim() || (o.shipping_address as any)?.fullName?.trim() || 'Customer';
       const resolvedPhone = digits.length === 10 ? `+91 ${digits}` : (o.customer_phone || '');
-      const existing = map.get(key) || (cleanEmail ? map.get(cleanEmail) : undefined) || (digits ? map.get(digits) : undefined);
+      const existing = map.get(key) || (cleanEmail ? map.get(cleanEmail) : undefined);
 
       const isRegistrationRow = (o.order_number && o.order_number.startsWith('REG-')) || o.notes === 'REGISTERED_CUSTOMER_MEMBER';
 
@@ -679,7 +679,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             existing.orderNumbers.push(o.order_number);
           }
         }
-        if (new Date(o.created_at) > new Date(existing.lastOrderDate)) {
+        if (new Date(o.created_at) >= new Date(existing.lastOrderDate)) {
           existing.lastOrderDate = o.created_at;
           if (o.shipping_address && !isRegistrationRow) existing.address = o.shipping_address;
           if (resolvedName && resolvedName !== 'Customer') existing.name = resolvedName;

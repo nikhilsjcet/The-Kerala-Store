@@ -161,7 +161,7 @@ describe('TheKeralaStore Authentication, Cart & Order Scoping Tests', () => {
     assert.equal(orderCreationCount, 0, 'Order creation must strictly never be triggered by adding to cart');
   });
 
-  // 8. Admin Customers list derivation: normalizes phone, merges duplicate customer orders, filters dummy/admin
+  // 8. Admin Customers list derivation: keys primarily by cleanEmail, isolates accounts even with shared phone, filters dummy/admin
   test('Derives unique store customers correctly and ignores dummy/admin accounts', () => {
     function deriveCustomers(orders) {
       const map = new Map();
@@ -179,17 +179,17 @@ describe('TheKeralaStore Authentication, Cart & Order Scoping Tests', () => {
 
         const digits = (o.customer_phone || '').replace(/\D/g, '').slice(-10);
         const cleanEmail = emailLower;
-        const key = digits || cleanEmail;
+        const key = cleanEmail || (digits ? `phone:${digits}` : o.id);
         if (!key) return;
 
-        const existing = map.get(key);
+        const existing = map.get(key) || (cleanEmail ? map.get(cleanEmail) : undefined);
         if (existing) {
           existing.orderCount += 1;
           existing.totalSpent += o.total_amount;
         } else {
           map.set(key, {
             name: o.customer_name,
-            phone: `+91 ${digits}`,
+            phone: digits.length === 10 ? `+91 ${digits}` : (o.customer_phone || ''),
             email: cleanEmail,
             orderCount: 1,
             totalSpent: o.total_amount,
@@ -205,14 +205,24 @@ describe('TheKeralaStore Authentication, Cart & Order Scoping Tests', () => {
       { customer_name: 'Rohit Sharma', customer_phone: '9999999999', customer_email: 'shopper@example.com', total_amount: 500 },
       { customer_name: 'Administrator', customer_phone: '1234567890', customer_email: 'admin@thekeralastore.shop', total_amount: 9999 },
       { customer_name: 'Manu Pillai', customer_phone: '9447123456', customer_email: 'manu@example.com', total_amount: 450 },
+      // Separate accounts sharing a family contact number:
+      { customer_name: 'Nikhil Saju', customer_phone: '8330816823', customer_email: 'nikhilska14@gmail.com', total_amount: 847 },
+      { customer_name: 'Nimmy Saju', customer_phone: '8330816823', customer_email: 'nimmyska21@gmail.com', total_amount: 5 },
     ];
 
     const result = deriveCustomers(testOrders);
-    assert.equal(result.length, 2, 'Should only derive 2 real unique customers');
+    assert.equal(result.length, 4, 'Should derive 4 real unique customers');
     const anjali = result.find((c) => c.name === 'Anjali Nair');
     assert.ok(anjali);
     assert.equal(anjali.orderCount, 2, 'Two orders with differing phone format merged into 1 customer');
     assert.equal(anjali.totalSpent, 2000, 'Total spent summed accurately');
+
+    const nikhil = result.find((c) => c.email === 'nikhilska14@gmail.com');
+    const nimmy = result.find((c) => c.email === 'nimmyska21@gmail.com');
+    assert.ok(nikhil, 'Nikhil Saju must not be overwritten or merged');
+    assert.ok(nimmy, 'Nimmy Saju must not overwrite Nikhil Saju');
+    assert.equal(nikhil.orderCount, 1);
+    assert.equal(nimmy.orderCount, 1);
     assert.equal(result.some((c) => c.name === 'Rohit Sharma'), false, 'Dummy accounts filtered');
   });
 

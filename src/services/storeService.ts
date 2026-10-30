@@ -1127,30 +1127,38 @@ export class StoreService {
       const client = getSupabaseClient();
       if (client) {
         try {
-          const { data, error } = await client
-            .from('customers')
-            .select('*')
-            .order('created_at', { ascending: false });
+          // A. Fetch from dedicated customers table if present
+          try {
+            const { data, error } = await client
+              .from('customers')
+              .select('*')
+              .order('created_at', { ascending: false });
 
-          if (!error && Array.isArray(data) && data.length > 0) {
-            list = data.map((d: any) => ({
-              id: d.id,
-              email: d.email,
-              full_name: d.full_name || d.name || d.email?.split('@')[0],
-              phone: d.phone || '',
-              avatar_url: d.avatar_url || '',
-              created_at: d.created_at || d.inserted_at || new Date().toISOString(),
-              last_sign_in_at: d.last_sign_in_at,
-              source: 'google',
-            }));
-          } else {
-            // Also fetch from registration rows in orders table
-            const { data: regRows } = await client
+            if (!error && Array.isArray(data) && data.length > 0) {
+              data.forEach((d: any) => {
+                list.push({
+                  id: d.id,
+                  email: d.email,
+                  full_name: d.full_name || d.name || d.email?.split('@')[0],
+                  phone: d.phone || '',
+                  avatar_url: d.avatar_url || '',
+                  created_at: d.created_at || d.inserted_at || new Date().toISOString(),
+                  last_sign_in_at: d.last_sign_in_at,
+                  source: 'google',
+                });
+              });
+            }
+          } catch {}
+
+          // B. Fetch from registration rows in orders table
+          try {
+            const { data: regRows, error: regError } = await client
               .from('orders')
               .select('*')
-              .or('order_number.ilike.REG-%,notes.eq.REGISTERED_CUSTOMER_MEMBER');
+              .or('order_number.ilike.REG-%,notes.eq.REGISTERED_CUSTOMER_MEMBER')
+              .order('created_at', { ascending: false });
 
-            if (Array.isArray(regRows)) {
+            if (!regError && Array.isArray(regRows)) {
               regRows.forEach((r: any) => {
                 list.push({
                   id: r.user_id || r.id,
@@ -1162,29 +1170,33 @@ export class StoreService {
                 });
               });
             }
-          }
+          } catch {}
         } catch (dbErr) {
           console.warn('Error reading customers from Supabase:', dbErr);
         }
       }
     }
 
-    // 2. Merge with local storage fallback
+    // 2. Unify by clean email and merge with local storage fallback
+    const map = new Map<string, RegisteredCustomer>();
+    list.forEach((c) => {
+      const email = (c.email || '').trim().toLowerCase();
+      if (email && !map.has(email)) {
+        map.set(email, c);
+      }
+    });
+
     if (typeof window !== 'undefined') {
       const localList: RegisteredCustomer[] = getLocal(STORAGE_KEYS.CUSTOMERS, []);
-      const map = new Map<string, RegisteredCustomer>();
-      list.forEach((c) => {
-        const email = (c.email || '').trim().toLowerCase();
-        if (email) map.set(email, c);
-      });
       localList.forEach((c) => {
         const email = (c.email || '').trim().toLowerCase();
         if (email && !map.has(email)) {
           map.set(email, c);
         }
       });
-      list = Array.from(map.values());
     }
+
+    list = Array.from(map.values());
 
     // Filter out dummy/admin accounts
     return list.filter((c) => {
