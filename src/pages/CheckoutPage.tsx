@@ -227,7 +227,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
           return;
         }
 
-        const configuredKey = orderData.key_id || localStorage.getItem('tks_razorpay_key_id') || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TtpS43wnngezRy';
+        const configuredKey = orderData.key_id || localStorage.getItem('tks_razorpay_key_id') || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_Tu1g2T6xlHBMj3';
 
         const options = {
           key: configuredKey,

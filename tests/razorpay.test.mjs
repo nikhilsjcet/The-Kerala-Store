@@ -6,8 +6,8 @@ import verifyPaymentHandler from '../api/verify-payment.js';
 
 describe('Razorpay Standard Web Checkout Integration Tests', () => {
 
-  const MOCK_KEY_ID = 'rzp_test_TtpS43wnngezRy';
-  const MOCK_KEY_SECRET = 'NwN4MUxP3dn7Yauf9pz5TJu3';
+  const MOCK_KEY_ID = 'rzp_test_Tu1g2T6xlHBMj3';
+  const MOCK_KEY_SECRET = 'FSTJS9M2kB06sHq4Id4mz5jJ';
 
   function createMockRes() {
     let statusCode = 200;
