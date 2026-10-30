@@ -174,16 +174,16 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
         {!isDetailsView ? (
           <div className="space-y-6">
             
-            {/* Header */}
-            <div className="text-center pb-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#0A5C36] bg-emerald-100/80 px-3 py-1 rounded-full">
+            {/* Header Green Banner with White Texts */}
+            <div className="bg-[#0A5C36] text-white rounded-3xl p-6 sm:p-8 text-center shadow-sm border-2 border-[#064024] space-y-3">
+              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-100 bg-white/15 px-3.5 py-1 rounded-full border border-white/20 inline-block">
                 The Kerala Store
               </span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mt-2">
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 Track My Orders
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                Select your ordered product to view full live tracking and courier updates
+              <p className="text-xs sm:text-sm text-emerald-100 max-w-md mx-auto">
+                Select your ordered product to view live tracking, courier dispatch, and delivery updates
               </p>
 
               {/* Order Search */}
@@ -194,13 +194,13 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                     placeholder="Enter Order ID (e.g. TKS-2026-...) or Mobile"
                     value={searchOrderNumber}
                     onChange={(e) => setSearchOrderNumber(e.target.value.toUpperCase())}
-                    className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-300 rounded-xl text-xs uppercase font-semibold focus:outline-none focus:ring-1 focus:ring-[#0A5C36] shadow-2xs"
+                    className="w-full pl-9 pr-3 py-2.5 bg-white text-gray-900 border border-transparent rounded-xl text-xs uppercase font-semibold focus:outline-none focus:ring-2 focus:ring-white shadow-2xs placeholder:text-gray-400 placeholder:normal-case"
                   />
                   <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#0A5C36] text-white rounded-xl text-xs font-bold hover:bg-[#064024] transition-colors shadow-2xs cursor-pointer"
+                  className="px-5 py-2.5 bg-[#064024] hover:bg-black text-white rounded-xl text-xs font-bold transition-colors shadow-2xs cursor-pointer border border-emerald-800"
                 >
                   Search
                 </button>
@@ -339,7 +339,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
             <div className="space-y-6 animate-in fade-in duration-150">
               
               {/* Back to Orders Bar */}
-              <div className="flex items-center justify-between pb-2">
+              <div className="flex items-center justify-between pb-1">
                 <button
                   type="button"
                   onClick={handleBackToList}
@@ -349,45 +349,69 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                   <span>Back to Track Orders</span>
                 </button>
 
-                <span className="text-xs font-mono font-bold text-gray-600">
+                <span className="text-xs font-mono font-bold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200">
                   {selectedOrder.order_number}
                 </span>
               </div>
 
-              {/* CARD 1: ORDER SUMMARY & PRODUCT DETAILS */}
-              <div className="bg-white rounded-3xl p-6 border border-gray-200/90 shadow-2xs space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
-                      Order Details
-                    </span>
-                    <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
-                      <span>{selectedOrder.order_number}</span>
-                      <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                        {selectedOrder.payment_method.toUpperCase()}
+              {/* HERO ORDER DETAILS GREEN BANNER WITH WHITE TEXTS */}
+              <div className="bg-[#0A5C36] text-white rounded-3xl p-6 sm:p-7 shadow-sm border-2 border-[#064024] relative overflow-hidden space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-black tracking-wider uppercase text-white border border-white/25">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                        Order Details
                       </span>
+                      <span className="text-xs font-mono font-bold bg-white/15 px-2.5 py-1 rounded-full text-white">
+                        {selectedOrder.order_number}
+                      </span>
+                      <span className="text-xs font-bold uppercase bg-white text-[#0A5C36] px-2.5 py-1 rounded-full shadow-2xs">
+                        {selectedOrder.payment_method === 'razorpay' ? 'Paid via Razorpay' : 'Cash on Delivery'}
+                      </span>
+                    </div>
+
+                    <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
+                      {selectedOrder.customer_name ? `Order Confirmed for ${selectedOrder.customer_name}` : 'Order Confirmed'}
                     </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Placed on {formatDateTime(selectedOrder.created_at)}
+                    
+                    <p className="text-xs text-emerald-100 font-medium">
+                      Placed on {formatDateTime(selectedOrder.created_at)} • Curated Kerala Doorstep Delivery
                     </p>
                   </div>
 
-                  <div className="text-left sm:text-right">
-                    <span className="text-[10px] font-bold uppercase text-gray-400 block">
+                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 sm:text-right shrink-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200 block">
                       Total Amount
                     </span>
-                    <span className="text-xl font-black text-[#0A5C36]">
+                    <span className="text-2xl sm:text-3xl font-black text-white">
                       {formatINR(selectedOrder.total_amount)}
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* CARD 1: ORDER SUMMARY & PRODUCT DETAILS */}
+              <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs overflow-hidden">
+                {/* Green Banner Header with White Texts */}
+                <div className="bg-[#0A5C36] text-white px-6 py-4 flex items-center justify-between border-b border-[#064024]">
+                  <div className="flex items-center gap-2.5">
+                    <Package className="w-5 h-5 text-emerald-200" />
+                    <h3 className="font-extrabold text-sm sm:text-base text-white">
+                      Ordered Products ({(selectedOrder.items || []).length})
+                    </h3>
+                  </div>
+                  <span className="text-xs font-black text-white bg-white/20 px-3 py-1 rounded-full border border-white/20">
+                    {formatINR(selectedOrder.total_amount)}
+                  </span>
+                </div>
 
                 {/* Products in this order */}
-                <div className="space-y-3">
+                <div className="p-6 space-y-3">
                   {(selectedOrder.items || []).map((it, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-4 p-3 bg-stone-50 rounded-2xl border border-stone-200/70 text-xs"
+                      className="flex items-center gap-4 p-3.5 bg-stone-50 rounded-2xl border border-stone-200/70 text-xs"
                     >
                       <img
                         src={it.product_image || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=400&q=80'}
@@ -414,125 +438,132 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
               </div>
 
               {/* CARD 2: LIVE DELIVERY TRACKING & STEPPER */}
-              <div className="bg-white rounded-3xl p-6 border border-gray-200/90 shadow-2xs space-y-6">
-                
-                {/* Header */}
-                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#0A5C36] flex items-center justify-center shrink-0">
-                      <Truck className="w-5 h-5" />
-                    </div>
+              <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs overflow-hidden">
+                {/* Green Banner Header with White Texts */}
+                <div className="bg-[#0A5C36] text-white px-6 py-4 flex items-center justify-between border-b border-[#064024]">
+                  <div className="flex items-center gap-2.5">
+                    <Truck className="w-5 h-5 text-emerald-200" />
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
-                        Fulfillment Status
+                      <h3 className="font-extrabold text-sm sm:text-base text-white">Live Delivery Tracking</h3>
+                      <span className="text-[11px] text-emerald-100 font-medium hidden sm:inline">
+                        {getStatusBadge(selectedOrder.fulfilment_status).description}
                       </span>
-                      <h3 className="text-base font-extrabold text-[#0A5C36]">
-                        {getStatusBadge(selectedOrder.fulfilment_status).label}
-                      </h3>
                     </div>
                   </div>
 
-                  <span className="text-xs text-gray-500 font-medium">
-                    {getStatusBadge(selectedOrder.fulfilment_status).description}
+                  <span className="text-xs font-black bg-white text-[#0A5C36] px-3.5 py-1 rounded-full shadow-2xs">
+                    {getStatusBadge(selectedOrder.fulfilment_status).label}
                   </span>
                 </div>
 
-                {/* 5-Step Delivery Stepper */}
-                <div className="grid grid-cols-5 gap-2 text-center pt-2">
-                  {[
-                    { step: 1, label: 'Order Confirmed' },
-                    { step: 2, label: 'Supplier Packed' },
-                    { step: 3, label: 'Shipped' },
-                    { step: 4, label: 'Out for Delivery' },
-                    { step: 5, label: 'Delivered' },
-                  ].map(({ step, label }) => {
-                    const status = getStepStatus(selectedOrder.fulfilment_status, step);
-                    return (
-                      <div key={step} className="flex flex-col items-center">
-                        <div
-                          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs mb-2 transition-all ${
-                            status === 'completed'
-                              ? 'bg-[#0A5C36] text-white shadow-xs'
-                              : status === 'current'
-                              ? 'bg-amber-500 text-white animate-pulse shadow-xs ring-4 ring-amber-100'
-                              : 'bg-gray-100 text-gray-400'
-                          }`}
-                        >
-                          {status === 'completed' ? (
-                            <CheckCircle2 className="w-5 h-5" />
-                          ) : (
-                            step
-                          )}
+                <div className="p-6 space-y-6">
+                  {/* 5-Step Delivery Stepper */}
+                  <div className="grid grid-cols-5 gap-2 text-center pt-2">
+                    {[
+                      { step: 1, label: 'Order Confirmed' },
+                      { step: 2, label: 'Supplier Packed' },
+                      { step: 3, label: 'Shipped' },
+                      { step: 4, label: 'Out for Delivery' },
+                      { step: 5, label: 'Delivered' },
+                    ].map(({ step, label }) => {
+                      const status = getStepStatus(selectedOrder.fulfilment_status, step);
+                      return (
+                        <div key={step} className="flex flex-col items-center">
+                          <div
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs mb-2 transition-all ${
+                              status === 'completed'
+                                ? 'bg-[#0A5C36] text-white shadow-xs'
+                                : status === 'current'
+                                ? 'bg-amber-500 text-white animate-pulse shadow-xs ring-4 ring-amber-100'
+                                : 'bg-gray-100 text-gray-400'
+                            }`}
+                          >
+                            {status === 'completed' ? (
+                              <CheckCircle2 className="w-5 h-5" />
+                            ) : (
+                              step
+                            )}
+                          </div>
+                          <span className={`text-[10px] sm:text-xs font-semibold leading-tight ${
+                            status === 'upcoming' ? 'text-gray-400' : 'text-gray-900'
+                          }`}>
+                            {label}
+                          </span>
                         </div>
-                        <span className={`text-[10px] sm:text-xs font-semibold leading-tight ${
-                          status === 'upcoming' ? 'text-gray-400' : 'text-gray-900'
-                        }`}>
-                          {label}
+                      );
+                    })}
+                  </div>
+
+                  {/* Courier Partner & AWB Live Tracking Card */}
+                  {selectedOrder.tracking_number ? (
+                    <div className="p-4 bg-emerald-50/90 border-2 border-emerald-300 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="space-y-1">
+                        <p className="font-bold text-emerald-950 flex items-center gap-1.5 text-xs">
+                          <Truck className="w-4 h-4 text-[#0A5C36]" />
+                          Courier Partner: <strong className="text-[#0A5C36]">{selectedOrder.tracking_carrier || 'Delhivery Express'}</strong>
+                        </p>
+                        <p className="text-emerald-900">
+                          Waybill / Tracking No: <strong className="font-mono text-gray-950 text-sm">{selectedOrder.tracking_number}</strong>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {getCourierTrackingUrl(selectedOrder.tracking_carrier, selectedOrder.tracking_number) && (
+                          <a
+                            href={getCourierTrackingUrl(selectedOrder.tracking_carrier, selectedOrder.tracking_number)!}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-4 py-2 bg-[#0A5C36] hover:bg-[#064024] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                          >
+                            <span>Track on Courier Website</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        <span className="text-[11px] font-bold text-[#0A5C36] bg-white px-3 py-1.5 rounded-xl border border-emerald-300">
+                          Live In-Transit
                         </span>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs flex items-center gap-3 text-gray-600">
+                      <Clock className="w-5 h-5 text-amber-600 shrink-0" />
+                      <div>
+                        <p className="font-bold text-gray-900">
+                          Packaging &amp; Courier Dispatch Underway
+                        </p>
+                        <p className="text-gray-500 text-[11px] mt-0.5">
+                          Your AWB waybill number and direct courier tracking link will be updated here as soon as our fulfillment team hands over the package to the courier.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {/* Courier Partner & AWB Live Tracking Card */}
-                {selectedOrder.tracking_number ? (
-                  <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="space-y-1">
-                      <p className="font-bold text-emerald-950 flex items-center gap-1.5 text-xs">
-                        <Truck className="w-4 h-4 text-[#0A5C36]" />
-                        Courier Partner: <strong className="text-[#0A5C36]">{selectedOrder.tracking_carrier || 'Delhivery Express'}</strong>
-                      </p>
-                      <p className="text-emerald-800">
-                        Waybill / Tracking No: <strong className="font-mono text-gray-900 text-sm">{selectedOrder.tracking_number}</strong>
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {getCourierTrackingUrl(selectedOrder.tracking_carrier, selectedOrder.tracking_number) && (
-                        <a
-                          href={getCourierTrackingUrl(selectedOrder.tracking_carrier, selectedOrder.tracking_number)!}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-4 py-2 bg-[#0A5C36] hover:bg-[#064024] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                        >
-                          <span>Track on Courier Website</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                      <span className="text-[11px] font-bold text-[#0A5C36] bg-white px-3 py-1.5 rounded-xl border border-emerald-300">
-                        Live In-Transit
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs flex items-center gap-3 text-gray-600">
-                    <Clock className="w-5 h-5 text-amber-600 shrink-0" />
-                    <div>
-                      <p className="font-bold text-gray-900">
-                        Packaging &amp; Courier Dispatch Underway
-                      </p>
-                      <p className="text-gray-500 text-[11px] mt-0.5">
-                        Your AWB waybill number and direct courier tracking link will be updated here as soon as our fulfillment team hands over the package to the courier.
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* CARD 3: SHIPPING DESTINATION */}
-              <div className="bg-white rounded-3xl p-6 border border-gray-200/90 shadow-2xs space-y-2 text-xs">
-                <h4 className="font-bold text-gray-900 text-sm flex items-center gap-1.5 mb-2">
-                  <MapPin className="w-4 h-4 text-[#0A5C36]" /> Shipping Destination
-                </h4>
-                <p className="font-bold text-gray-900 text-sm">{selectedOrder.customer_name}</p>
-                <p className="text-gray-600">Phone: <strong className="text-gray-800">{selectedOrder.customer_phone}</strong></p>
-                <p className="text-gray-600">{selectedOrder.shipping_address?.addressLine1}</p>
-                {selectedOrder.shipping_address?.addressLine2 && (
-                  <p className="text-gray-600">{selectedOrder.shipping_address.addressLine2}</p>
-                )}
-                <p className="text-gray-800 font-semibold">
-                  {selectedOrder.shipping_address?.city}, {selectedOrder.shipping_address?.state} - {selectedOrder.shipping_address?.pincode}
-                </p>
+              <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs overflow-hidden">
+                {/* Green Banner Header with White Texts */}
+                <div className="bg-[#0A5C36] text-white px-6 py-4 flex items-center justify-between border-b border-[#064024]">
+                  <div className="flex items-center gap-2.5">
+                    <MapPin className="w-5 h-5 text-emerald-200" />
+                    <h3 className="font-extrabold text-sm sm:text-base text-white">Shipping Destination</h3>
+                  </div>
+                  <span className="text-xs text-white bg-white/20 px-3 py-1 rounded-full border border-white/20 font-bold">
+                    Doorstep Delivery
+                  </span>
+                </div>
+
+                <div className="p-6 space-y-1.5 text-xs">
+                  <p className="font-bold text-gray-900 text-sm">{selectedOrder.customer_name}</p>
+                  <p className="text-gray-600">Phone: <strong className="text-gray-900">{selectedOrder.customer_phone}</strong></p>
+                  <p className="text-gray-600">{selectedOrder.shipping_address?.addressLine1}</p>
+                  {selectedOrder.shipping_address?.addressLine2 && (
+                    <p className="text-gray-600">{selectedOrder.shipping_address.addressLine2}</p>
+                  )}
+                  <p className="text-gray-900 font-semibold">
+                    {selectedOrder.shipping_address?.city}, {selectedOrder.shipping_address?.state} - {selectedOrder.shipping_address?.pincode}
+                  </p>
+                </div>
               </div>
 
               {/* CARD 4: INSTAGRAM DELIVERY HELP */}

@@ -187,19 +187,19 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
 
   return (
     <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs overflow-hidden transition-all hover:border-gray-300">
-      {/* Top Header */}
-      <div className="p-4 sm:p-5 bg-stone-50/70 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Top Green Banner with White Texts */}
+      <div className="p-4 sm:p-5 bg-[#0A5C36] text-white border-b border-[#064024] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="font-mono font-extrabold text-gray-900 text-sm sm:text-base">{order.order_number}</span>
-          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
-            order.payment_method === 'cod' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+          <span className="font-mono font-extrabold text-white text-sm sm:text-base">{order.order_number}</span>
+          <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+            order.payment_method === 'cod' ? 'bg-amber-300 text-amber-950 border-amber-300' : 'bg-white text-[#0A5C36] border-white'
           }`}>
             {order.payment_method.toUpperCase()}
           </span>
 
           {/* Quick Delivery Status Dropdown for Admin */}
-          <div className="flex items-center gap-1.5 bg-white pl-2.5 pr-1.5 py-1 rounded-xl border border-gray-200 shadow-2xs">
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Delivery:</span>
+          <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/25 pl-2.5 pr-1.5 py-1 rounded-xl text-white">
+            <span className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider">Delivery:</span>
             <select
               value={status}
               disabled={isSaving}
@@ -212,7 +212,7 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
                 setSavedSuccess(true);
                 setTimeout(() => setSavedSuccess(false), 2500);
               }}
-              className="text-xs font-black bg-transparent text-gray-900 focus:outline-none cursor-pointer pr-1"
+              className="text-xs font-black bg-transparent text-white focus:outline-none cursor-pointer pr-1 [&>option]:text-gray-900"
             >
               <option value="pending">⏳ Pending (Confirmed)</option>
               <option value="supplier_ordered">📦 Packed (Meesho)</option>
@@ -221,17 +221,17 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
               <option value="delivered">✅ Delivered to Doorstep</option>
               <option value="cancelled">❌ Cancelled</option>
             </select>
-            {isSaving && <span className="text-[10px] text-gray-400 font-bold animate-pulse">Updating...</span>}
-            {savedSuccess && <span className="text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded font-black">✓ Updated!</span>}
+            {isSaving && <span className="text-[10px] text-emerald-200 font-bold animate-pulse">Updating...</span>}
+            {savedSuccess && <span className="text-[10px] text-[#0A5C36] bg-white px-1.5 py-0.5 rounded font-black">✓ Updated!</span>}
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-emerald-100 font-medium">
             {formatDateTime(order.created_at)}
           </span>
           <div className="text-right">
-            <span className="text-base sm:text-lg font-black text-[#0A5C36]">
+            <span className="text-base sm:text-lg font-black text-white">
               {formatINR(order.total_amount)}
             </span>
           </div>
