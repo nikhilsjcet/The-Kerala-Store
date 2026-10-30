@@ -157,5 +157,42 @@ describe('Razorpay Standard Web Checkout Integration Tests', () => {
     assert.equal(res.getBody().order_id, orderId);
   });
 
+  // 7. Missing order amount handling on /api/create-order
+  test('POST /api/create-order rejects missing or empty order body with HTTP 400', async () => {
+    process.env.RAZORPAY_KEY_ID = MOCK_KEY_ID;
+    process.env.RAZORPAY_KEY_SECRET = MOCK_KEY_SECRET;
+
+    const req = {
+      method: 'POST',
+      body: { items: [] }
+    };
+    const res = createMockRes();
+
+    await createOrderHandler(req, res);
+
+    assert.equal(res.getStatus(), 400);
+    assert.match(res.getBody().error, /100 paise/i);
+  });
+
+  // 8. Idempotent payment verification handling
+  test('POST /api/verify-payment rejects signature with mismatched character length safely', async () => {
+    process.env.RAZORPAY_KEY_SECRET = MOCK_KEY_SECRET;
+
+    const req = {
+      method: 'POST',
+      body: {
+        razorpay_order_id: 'order_123',
+        razorpay_payment_id: 'pay_456',
+        razorpay_signature: 'short_sig'
+      }
+    };
+    const res = createMockRes();
+
+    await verifyPaymentHandler(req, res);
+
+    assert.equal(res.getStatus(), 400);
+    assert.equal(res.getBody().success, false);
+  });
+
 });
 

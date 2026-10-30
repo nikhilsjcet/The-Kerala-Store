@@ -198,6 +198,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              items: cart.map((it) => ({
+                product_id: it.product.id,
+                quantity: it.quantity,
+                variant_name: it.variant?.name,
+                sku: it.variant?.sku || it.product.sku,
+              })),
+              discount_code: discountCode,
+              customer: {
+                name: formData.fullName,
+                email: formData.email,
+                phone: formData.phone,
+              },
               amount: amountPaise,
               currency: 'INR',
               receipt: `rcpt_${Date.now()}`,
@@ -246,7 +258,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
           },
           handler: async function (response: any) {
             try {
-              // STEP 3: BACKEND - Verify payment signature
+              // STEP 3: BACKEND - Verify payment signature & create order in Supabase
               const verifyRes = await fetch('/api/verify-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -254,6 +266,28 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
+                  order_payload: {
+                    user_id: user?.id,
+                    customer_name: formData.fullName,
+                    customer_email: formData.email,
+                    customer_phone: formData.phone,
+                    shipping_address: {
+                      fullName: formData.fullName,
+                      email: formData.email,
+                      phone: formData.phone,
+                      addressLine1: formData.addressLine1,
+                      addressLine2: formData.addressLine2 || '',
+                      city: formData.city,
+                      state: formData.state,
+                      pincode: formData.pincode,
+                    },
+                    items: orderItems,
+                    subtotal: verifiedSubtotal,
+                    discount_amount: verifiedDiscount,
+                    discount_code: discountCode,
+                    shipping_fee: verifiedShipping,
+                    total_amount: verifiedTotal,
+                  },
                 }),
               });
 
@@ -265,8 +299,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
                 return;
               }
 
-              // Signature verified successfully -> finalize order
-              await createFinalOrder(response.razorpay_payment_id);
+              // Server verified payment and created order; use server order or create fallback
+              const completedOrder = verifyData.order || await createFinalOrder(response.razorpay_payment_id);
+
+              clearCart();
+              setIsSubmitting(false);
+              onOrderSuccess(completedOrder);
             } catch (verErr: any) {
               setErrorMessage(verErr?.message || 'Payment verification encountered an unexpected error.');
               setIsSubmitting(false);
