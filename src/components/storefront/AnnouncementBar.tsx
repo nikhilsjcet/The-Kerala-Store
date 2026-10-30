@@ -7,7 +7,7 @@ interface AnnouncementBarProps {
 
 export const AnnouncementBar: React.FC<AnnouncementBarProps> = ({ onOpenInfoModal, onNavigateOrders }) => {
   return (
-    <div className="bg-[#0B4628] text-white text-xs sm:text-sm font-medium py-2 px-4 transition-colors select-none">
+    <div className="hidden md:block bg-[#0B4628] text-white text-xs sm:text-sm font-medium py-2 px-4 transition-colors select-none">
       <div className="max-w-7xl mx-auto flex items-center justify-end gap-4">
         
         {/* Right: About | Contact | Help Center | Track Order */}

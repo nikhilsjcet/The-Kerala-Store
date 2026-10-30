@@ -78,20 +78,20 @@ export const ShopByCategory: React.FC<ShopByCategoryProps> = ({ onSelectCategory
             <div
               key={cat.slug}
               onClick={() => onSelectCategory(cat.slug)}
-              className="group flex-shrink-0 w-[100px] sm:w-[115px] h-[130px] sm:h-[148px] bg-[#F8F6F2] hover:bg-[#F2EFE8] border border-[#ECE6DF]/80 hover:border-[#0A5C36] rounded-2xl p-2.5 flex flex-col items-center justify-between text-center cursor-pointer select-none transition-all duration-200 shadow-2xs hover:shadow-xs active:scale-95"
+              className="group flex-shrink-0 w-[104px] sm:w-[120px] h-[138px] sm:h-[154px] bg-[#F8F6F2] hover:bg-[#F2EFE8] border border-[#ECE6DF] hover:border-[#0A5C36] rounded-2xl p-2 flex flex-col items-center justify-between text-center cursor-pointer select-none transition-all duration-200 shadow-2xs hover:shadow-xs active:scale-95"
             >
-              {/* Product image */}
-              <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-0.5">
+              {/* High-res category image */}
+              <div className="w-[74px] h-[74px] sm:w-[86px] sm:h-[86px] rounded-xl overflow-hidden flex items-center justify-center bg-white/40">
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+                  className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                 />
               </div>
 
               {/* Category label */}
-              <span className="text-[11px] sm:text-xs font-semibold text-gray-900 group-hover:text-[#0A5C36] transition-colors leading-tight line-clamp-2 w-full">
+              <span className="text-[11px] sm:text-xs font-semibold text-gray-900 group-hover:text-[#0A5C36] transition-colors leading-tight line-clamp-2 w-full mt-1">
                 {cat.name}
               </span>
             </div>
