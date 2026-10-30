@@ -443,28 +443,28 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
         </div>
 
         {/* Detailed Tabs: Description, Specifications, Reviews */}
-        <div className="mt-12 bg-white rounded-3xl p-6 sm:p-10 border border-gray-200/80 shadow-2xs">
-          <div className="flex border-b border-gray-200 text-sm font-bold gap-6">
+        <div className="mt-12 bg-white rounded-3xl p-6 sm:p-10 border-2 border-gray-200 shadow-sm">
+          <div className="flex border-b-2 border-gray-200 text-sm font-bold gap-6">
             <button
               onClick={() => setActiveTab('desc')}
-              className={`pb-3 border-b-2 transition-colors ${
-                activeTab === 'desc' ? 'border-[#0A5C36] text-[#0A5C36]' : 'border-transparent text-gray-500 hover:text-gray-800'
+              className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+                activeTab === 'desc' ? 'border-[#0A5C36] text-[#0A5C36] font-black' : 'border-transparent text-gray-500 hover:text-gray-900'
               }`}
             >
-              Full Description
+              Description
             </button>
             <button
               onClick={() => setActiveTab('specs')}
-              className={`pb-3 border-b-2 transition-colors ${
-                activeTab === 'specs' ? 'border-[#0A5C36] text-[#0A5C36]' : 'border-transparent text-gray-500 hover:text-gray-800'
+              className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+                activeTab === 'specs' ? 'border-[#0A5C36] text-[#0A5C36] font-black' : 'border-transparent text-gray-500 hover:text-gray-900'
               }`}
             >
               Technical Specifications
             </button>
             <button
               onClick={() => setActiveTab('reviews')}
-              className={`pb-3 border-b-2 transition-colors ${
-                activeTab === 'reviews' ? 'border-[#0A5C36] text-[#0A5C36]' : 'border-transparent text-gray-500 hover:text-gray-800'
+              className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+                activeTab === 'reviews' ? 'border-[#0A5C36] text-[#0A5C36] font-black' : 'border-transparent text-gray-500 hover:text-gray-900'
               }`}
             >
               Customer Reviews ({product.customer_reviews?.length || 0})
@@ -473,29 +473,31 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
 
           <div className="py-6">
             {activeTab === 'desc' && (
-              <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
-                <p>{product.description}</p>
-                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-xs text-emerald-900">
-                  <h4 className="font-bold text-sm mb-1 text-[#0A5C36]">TheKeralaStore Quality Inspection</h4>
-                  <p>
-                    All items shipped under this SKU undergo quality bench testing and electrostatic packaging before carrier pickup. Tracking credentials will be delivered to your registered mobile number and email.
-                  </p>
-                </div>
+              <div className="space-y-4 text-sm text-gray-800 leading-relaxed font-medium">
+                <p className="whitespace-pre-line">{product.description}</p>
               </div>
             )}
 
             {activeTab === 'specs' && (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs sm:text-sm">
-                  <tbody>
-                    {Object.entries(product.specifications || {}).map(([key, val], idx) => (
-                      <tr key={key} className={idx % 2 === 0 ? 'bg-stone-50' : 'bg-white'}>
-                        <td className="py-3 px-4 font-bold text-gray-700 w-1/3">{key}</td>
-                        <td className="py-3 px-4 text-gray-600">{val}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {Object.keys(product.specifications || {}).length === 0 ? (
+                  <div className="text-center py-8 text-xs text-gray-500 font-semibold bg-stone-50 rounded-2xl border-2 border-dashed border-gray-200">
+                    No technical specifications added yet.
+                  </div>
+                ) : (
+                  <div className="border-2 border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
+                    <table className="w-full text-left text-xs sm:text-sm">
+                      <tbody>
+                        {Object.entries(product.specifications || {}).map(([key, val], idx) => (
+                          <tr key={key} className={idx % 2 === 0 ? 'bg-stone-50/80 border-b border-gray-200' : 'bg-white border-b border-gray-200 last:border-b-0'}>
+                            <td className="py-3.5 px-4 font-black text-gray-900 w-1/3 sm:w-1/4 border-r border-gray-200">{key}</td>
+                            <td className="py-3.5 px-4 text-gray-800 font-medium">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 

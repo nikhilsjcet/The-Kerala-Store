@@ -50,12 +50,31 @@ const getInitialPage = (): 'home' | 'shop' | 'product-details' | 'checkout' | 'o
   if (path === '/shop' || search.includes('page=shop') || hash === '#shop') {
     return 'shop';
   }
+  // Support product details reload/direct load without resetting to home
+  if (path.startsWith('/product/') || path.startsWith('/products/') || search.includes('product=')) {
+    return 'product-details';
+  }
   return 'home';
+};
+
+const getInitialProductSlug = (): string => {
+  if (typeof window === 'undefined') return '';
+  const pathname = window.location.pathname;
+  if (pathname.includes('/product/')) {
+    const parts = pathname.split('/product/');
+    return decodeURIComponent(parts[1]?.split('/')[0]?.split('?')[0]?.split('#')[0] || '');
+  }
+  if (pathname.includes('/products/')) {
+    const parts = pathname.split('/products/');
+    return decodeURIComponent(parts[1]?.split('/')[0]?.split('?')[0]?.split('#')[0] || '');
+  }
+  const params = new URLSearchParams(window.location.search);
+  return params.get('product') || params.get('slug') || '';
 };
 
 const MainApp: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product-details' | 'checkout' | 'orders' | 'wishlist' | 'admin'>(getInitialPage);
-  const [selectedProductSlug, setSelectedProductSlug] = useState<string>('');
+  const [selectedProductSlug, setSelectedProductSlug] = useState<string>(getInitialProductSlug);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
   const [activeSearchQuery, setActiveSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<string>('');
@@ -71,7 +90,7 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     // Ensure base history entry exists so pressing back doesn't close the site
     if (!window.history.state) {
-      window.history.replaceState({ page: getInitialPage() }, '', window.location.href);
+      window.history.replaceState({ page: getInitialPage(), slug: getInitialProductSlug() }, '', window.location.href);
     }
 
     const handleNavOrders = () => handleNavigate('orders');
@@ -99,7 +118,11 @@ const MainApp: React.FC = () => {
           setSelectedCategorySlug(e.state.param.replace('category=', ''));
         }
       } else {
-        setCurrentPage(getInitialPage());
+        const p = getInitialPage();
+        setCurrentPage(p);
+        if (p === 'product-details') {
+          setSelectedProductSlug(getInitialProductSlug());
+        }
       }
     };
     window.addEventListener('popstate', handlePopState);

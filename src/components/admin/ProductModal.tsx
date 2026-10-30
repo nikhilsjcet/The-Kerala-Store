@@ -53,6 +53,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Technical Specifications (Key & Value pairs)
+  const [specsList, setSpecsList] = useState<{ key: string; value: string }[]>([]);
+
   const handleDeviceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -78,6 +81,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   useEffect(() => {
     if (product) {
       setFormData({ ...product });
+      const specs = product.specifications || {};
+      const pairs = Object.entries(specs).map(([key, value]) => ({ key, value: String(value) }));
+      setSpecsList(pairs.length > 0 ? pairs : [
+        { key: 'Brand', value: 'The Kerala Store' },
+        { key: 'Material', value: '' },
+        { key: 'Warranty', value: '7 Days Replacement' },
+        { key: 'Origin', value: 'Kerala, India' },
+      ]);
     } else {
       setFormData({
         title: '',
@@ -103,8 +114,30 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         processing_time_days: 2,
         variants: [],
       });
+      setSpecsList([
+        { key: 'Brand', value: 'The Kerala Store' },
+        { key: 'Material', value: '' },
+        { key: 'Warranty', value: '7 Days Replacement' },
+        { key: 'Origin', value: 'Kerala, India' },
+      ]);
     }
   }, [product, categories, suppliers]);
+
+  const handleAddSpec = (key = '', value = '') => {
+    setSpecsList((prev) => [...prev, { key, value }]);
+  };
+
+  const handleUpdateSpec = (index: number, field: 'key' | 'value', val: string) => {
+    setSpecsList((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: val };
+      return copy;
+    });
+  };
+
+  const handleRemoveSpec = (index: number) => {
+    setSpecsList((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -139,8 +172,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     e.preventDefault();
     setIsSaving(true);
     try {
+      const specsRecord: Record<string, string> = {};
+      specsList.forEach((s) => {
+        if (s.key.trim() && s.value.trim()) {
+          specsRecord[s.key.trim()] = s.value.trim();
+        }
+      });
+
       const dataToSave = {
         ...formData,
+        specifications: specsRecord,
         category_id: formData.category_id || categories[0]?.id,
         slug: formData.slug?.trim() || (formData.title || 'prod').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         status: formData.status || 'published',
@@ -281,15 +322,85 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Full Description</label>
+              <label className="block text-xs font-black text-gray-900 mb-1">Full Description</label>
               <textarea
                 name="description"
-                rows={3}
-                placeholder="Detailed specifications and customer selling points..."
+                rows={4}
+                placeholder="Write full product overview, highlights, craft story, and usage details..."
                 value={formData.description}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0A5C36]"
+                className="w-full px-3 py-2 text-xs bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#0A5C36] leading-relaxed"
               />
+            </div>
+
+            {/* Technical Specifications Section */}
+            <div className="p-4 bg-stone-50 border-2 border-gray-200 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-gray-900">
+                    Technical Specifications
+                  </h4>
+                  <p className="text-[11px] text-gray-500">
+                    Shown in the Technical Specifications tab on the live product page
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleAddSpec('', '')}
+                  className="px-3 py-1.5 bg-[#0A5C36] hover:bg-[#064024] text-white rounded-xl text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Spec
+                </button>
+              </div>
+
+              {/* Quick Add Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] font-bold text-gray-400 uppercase">Quick Add:</span>
+                {['Brand', 'Material', 'Warranty', 'Dimensions', 'Origin', 'Battery', 'Weight', 'Color'].map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => {
+                      if (!specsList.some((s) => s.key.toLowerCase() === chip.toLowerCase())) {
+                        handleAddSpec(chip, '');
+                      }
+                    }}
+                    className="text-[11px] font-bold bg-white hover:bg-emerald-50 text-gray-700 hover:text-[#0A5C36] px-2.5 py-1 rounded-lg border border-gray-200 hover:border-emerald-300 transition-colors cursor-pointer"
+                  >
+                    + {chip}
+                  </button>
+                ))}
+              </div>
+
+              {/* Specs Rows */}
+              <div className="space-y-2 pt-2">
+                {specsList.map((spec, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Spec Name (e.g. Battery)"
+                      value={spec.key}
+                      onChange={(e) => handleUpdateSpec(idx, 'key', e.target.value)}
+                      className="w-1/3 px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl font-bold text-gray-800 focus:outline-none focus:border-[#0A5C36]"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Value (e.g. 5000 mAh / 100% Cotton)"
+                      value={spec.value}
+                      onChange={(e) => handleUpdateSpec(idx, 'value', e.target.value)}
+                      className="flex-1 px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:border-[#0A5C36]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSpec(idx)}
+                      className="p-2 text-gray-400 hover:text-red-600 transition-colors cursor-pointer rounded-lg hover:bg-red-50"
+                      title="Remove specification"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

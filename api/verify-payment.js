@@ -85,10 +85,11 @@ export default async function handler(req, res) {
 
     // 2. Fetch payment details from Razorpay to verify status & amount
     let razorpayPayment = null;
-    if (process.env.RAZORPAY_KEY_ID && key_secret) {
+    const key_id = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
+    if (key_id && key_secret) {
       try {
         const razorpay = new Razorpay({
-          key_id: process.env.RAZORPAY_KEY_ID,
+          key_id: key_id,
           key_secret: key_secret,
         });
         razorpayPayment = await razorpay.payments.fetch(razorpay_payment_id);
