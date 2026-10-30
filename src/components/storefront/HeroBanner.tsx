@@ -1,5 +1,5 @@
-import React from 'react';
-import { Edit3 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Edit3 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface HeroBannerProps {
@@ -7,18 +7,68 @@ interface HeroBannerProps {
   onQuickEdit?: () => void;
 }
 
+interface SlideItem {
+  subtitle: string;
+  line1: string;
+  line2Prefix: string;
+  highlightWord: string;
+  ctaText: string;
+}
+
+const SLIDES: SlideItem[] = [
+  {
+    subtitle: 'EXPLORE • SHOP • LIVE BETTER',
+    line1: 'Your One-Stop Store',
+    line2Prefix: 'for ',
+    highlightWord: 'Everything',
+    ctaText: 'Shop Now',
+  },
+  {
+    subtitle: 'AUTHENTIC & TRADITIONAL',
+    line1: 'Pure Kerala Treasures',
+    line2Prefix: 'at ',
+    highlightWord: 'Best Prices',
+    ctaText: 'Explore Kerala',
+  },
+  {
+    subtitle: 'PREMIUM SOUND & WEARABLES',
+    line1: 'Smart Living & Audio',
+    line2Prefix: 'crafted for ',
+    highlightWord: 'Everyday Life',
+    ctaText: 'Shop Gadgets',
+  },
+  {
+    subtitle: 'FRESH TRENDS & LIFESTYLE',
+    line1: 'Handpicked Quality Drops',
+    line2Prefix: 'delivered to your ',
+    highlightWord: 'Doorstep',
+    ctaText: 'Discover Style',
+  },
+];
+
 export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }) => {
   const { isAdmin } = useAuth();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Automatically advance headline text across 4 slides every 4.5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
+
+  const slide = SLIDES[currentSlide];
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-4 select-none">
       {/* 
-        Hero Banner Card matching the design given in the user screenshot:
-        TheKeralaStore™ - Your One-Stop Store for Everything (Explore, Shop, Live Better)
+        Compact, responsive hero banner card fitting horizontally on PC
+        with live 4-slide automatic text carousel
       */}
       <div 
         onClick={onShopNow}
-        className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs border border-[#E0D5CB] cursor-pointer group hover:shadow-md transition-all active:scale-[0.99] bg-[#ECE2D9] w-full"
+        className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs border border-[#E0D5CB] cursor-pointer group hover:shadow-md transition-all active:scale-[0.99] bg-[#ECE2D9] h-[210px] sm:h-[250px] md:h-[270px] lg:h-[290px] w-full flex items-center"
       >
         {/* Admin Quick Edit Button */}
         {isAdmin && (
@@ -31,25 +81,77 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onQuickEdit }
           </button>
         )}
 
-        {/* High Clarity HD Banner graphic uploaded by user */}
-        <div className="relative w-full aspect-[1024/377] bg-[#ECE2D9] overflow-hidden">
-          <img
-            src="/mockup/hero-banner-hd.png"
-            srcSet="/mockup/hero-banner-hd.png 1024w, /mockup/hero-banner-card@2x.png 1024w"
-            sizes="(max-width: 640px) 100vw, 1024px"
-            alt="TheKeralaStore - Your One-Stop Store for Everything. Explore, Shop, Live Better."
-            className="w-full h-full object-cover object-center group-hover:scale-[1.01] transition-transform duration-300"
-            loading="eager"
-          />
+        {/* High Clarity Base Artwork Background */}
+        <img
+          src="/mockup/hero-banner-base-bg.png"
+          alt="TheKeralaStore Lifestyle"
+          className="absolute inset-0 w-full h-full object-cover object-right sm:object-center pointer-events-none"
+          loading="eager"
+        />
 
-          {/* Accessible focusable hotspot over the 'Shop Now' button area */}
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onShopNow(); }}
-            aria-label="Shop Now"
-            className="absolute left-[6%] bottom-[12%] w-[25%] h-[22%] rounded-full cursor-pointer opacity-0 focus:opacity-100 focus:ring-2 focus:ring-[#0A5C36] focus:bg-white/20 transition-opacity"
-          />
+        {/* Left Column: Live Animated Text Content (4 Slides) */}
+        <div className="relative z-10 w-full max-w-[62%] sm:max-w-[55%] md:max-w-[50%] h-full pl-4 sm:pl-8 md:pl-12 pr-2 py-3 sm:py-5 flex flex-col justify-between">
+          
+          {/* Top: Official TheKeralaStore™ Logo & Subtitle */}
+          <div>
+            <div className="h-6 sm:h-8 md:h-9 flex items-center">
+              <img
+                src="/mockup/thekeralastore-logo-hero-clean-transparent.png"
+                alt="TheKeralaStore"
+                className="h-full w-auto object-contain drop-shadow-2xs"
+              />
+            </div>
+            <p 
+              key={`sub-${currentSlide}`}
+              className="text-[8.5px] sm:text-[10px] md:text-xs font-bold tracking-[0.2em] text-gray-700 uppercase mt-1 sm:mt-1.5 transition-all duration-300 line-clamp-1"
+            >
+              {slide.subtitle}
+            </p>
+          </div>
+
+          {/* Center: Dynamic Animated Headline (Changes automatically like 4 slides) */}
+          <div className="my-auto py-1">
+            <h1 
+              key={`title-${currentSlide}`}
+              className="text-base sm:text-xl md:text-2xl lg:text-[27px] font-black text-gray-950 tracking-tight leading-[1.12] transition-opacity duration-300"
+            >
+              {slide.line1} <br />
+              {slide.line2Prefix}
+              <span className="text-[#0A5C36]">{slide.highlightWord}</span>
+            </h1>
+          </div>
+
+          {/* Bottom: Shop Now Button & 4 Interactive Pagination Dots */}
+          <div className="space-y-1.5 sm:space-y-2.5">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onShopNow(); }}
+              className="bg-[#0A5C36] hover:bg-[#074628] text-white px-4 sm:px-6 py-1.5 sm:py-2 rounded-full font-bold text-[11px] sm:text-xs md:text-sm shadow-sm hover:shadow active:scale-95 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>{slide.ctaText}</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+
+            {/* 4 Pagination Dots matching 4 slides */}
+            <div className="flex items-center gap-1.5">
+              {SLIDES.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setCurrentSlide(idx); }}
+                  aria-label={`Go to slide ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    idx === currentSlide
+                      ? 'w-5 sm:w-6 bg-[#0A5C36]'
+                      : 'w-1.5 sm:w-2 bg-gray-400/60 hover:bg-gray-600'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
         </div>
+
       </div>
     </section>
   );
