@@ -240,10 +240,21 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
               </div>
             </form>
 
-            {/* Expansive Hero Banner Card: Pure native UI with rich typography and clean brand artwork */}
-            <div className="bg-gradient-to-br from-[#FAF7F2] via-[#F4EFE6] to-[#ECE5D8] rounded-3xl p-6 sm:p-8 lg:p-12 border border-[#E5DDD0] relative overflow-hidden shadow-2xs">
-              <div className="relative z-10 max-w-2xl space-y-3 sm:space-y-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E2F3E9] text-[#0A5C36] text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-full border border-[#C6E7D2]">
+            {/* Expansive Hero Banner Card: Photorealistic, warm Kerala lifestyle artwork */}
+            <div className="relative rounded-3xl overflow-hidden shadow-2xs border border-[#E5DDD0] min-h-[220px] sm:min-h-[260px] lg:min-h-[290px] flex items-center">
+              {/* High-Resolution Studio Background Asset */}
+              <img
+                src="/mockup/orders-hero-parcel.jpg"
+                alt="The Kerala Store Order Tracking"
+                className="absolute inset-0 w-full h-full object-cover object-right sm:object-center select-none"
+              />
+
+              {/* Soft Natural Light Gradient Mask for Crisp Typography Readability */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#FAF7F2] via-[#FAF7F2]/95 sm:via-[#FAF7F2]/85 to-transparent/20 z-0 pointer-events-none" />
+
+              {/* Text Content */}
+              <div className="relative z-10 p-6 sm:p-8 lg:p-12 max-w-xl sm:max-w-2xl space-y-3 sm:space-y-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E2F3E9] text-[#0A5C36] text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-full border border-[#C6E7D2] shadow-2xs">
                   <Sparkles className="w-3.5 h-3.5 text-[#0A5C36]" />
                   The Kerala Store
                 </span>
@@ -252,27 +263,9 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                   Track My Orders
                 </h1>
                 
-                <p className="text-xs sm:text-base text-gray-600 max-w-xl leading-relaxed">
+                <p className="text-xs sm:text-base text-gray-700 font-medium max-w-lg leading-relaxed">
                   View the real-time status of your orders, courier dispatch details, and doorstep delivery updates across India.
                 </p>
-              </div>
-
-              {/* Decorative Pure Vector Artwork on PC (Isometric Parcel Box with Leaves) */}
-              <div className="absolute right-4 sm:right-8 lg:right-12 bottom-0 top-0 flex items-center justify-end pointer-events-none opacity-20 sm:opacity-90">
-                <div className="relative w-36 h-36 sm:w-48 sm:h-48 lg:w-60 lg:h-60 flex items-center justify-center">
-                  {/* Stylized Kerala Delivery Box Icon in SVG */}
-                  <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md text-[#0A5C36]" fill="none">
-                    <polygon points="100,20 180,60 100,100 20,60" fill="#E8D5B5" stroke="#C4A882" strokeWidth="3" />
-                    <polygon points="20,60 100,100 100,180 20,140" fill="#D4B991" stroke="#C4A882" strokeWidth="3" />
-                    <polygon points="100,100 180,60 180,140 100,180" fill="#C2A478" stroke="#B08F64" strokeWidth="3" />
-                    {/* Brand Emblem on Box Face */}
-                    <circle cx="60" cy="120" r="18" fill="#0A5C36" opacity="0.9" />
-                    <path d="M53 120 L58 125 L68 114" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                    {/* Tropical Green Leaves Accents */}
-                    <path d="M120,40 C140,20 170,30 180,50 C170,70 140,60 120,40 Z" fill="#2E7D32" opacity="0.85" />
-                    <path d="M140,50 C160,35 185,45 190,60 C180,75 155,70 140,50 Z" fill="#4CAF50" opacity="0.75" />
-                  </svg>
-                </div>
               </div>
             </div>
 
@@ -478,12 +471,23 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                 </div>
               </div>
 
-              {/* TOP HERO CONFIRMATION BANNER: Forest Green (#0B4628) with expansive desktop padding */}
-              <div className="bg-gradient-to-br from-[#0B4628] via-[#083D22] to-[#052816] text-white rounded-3xl p-6 sm:p-8 lg:p-12 shadow-sm border-2 border-[#064024] relative overflow-hidden space-y-6">
+              {/* TOP HERO CONFIRMATION BANNER: Deep Forest Green (#0B4628) with Photorealistic Green Foliage & Parcel */}
+              <div className="relative rounded-3xl overflow-hidden shadow-md border-2 border-[#064024] text-white min-h-[260px] sm:min-h-[300px] lg:min-h-[320px] flex flex-col justify-between p-6 sm:p-8 lg:p-12">
                 
-                <div className="relative z-10 max-w-3xl space-y-3 sm:space-y-4">
+                {/* High-Resolution Generated Forest Green Foliage & Parcel Background */}
+                <img
+                  src="/mockup/order-confirmed-green-parcel.jpg"
+                  alt="Order Confirmed - The Kerala Store"
+                  className="absolute inset-0 w-full h-full object-cover object-right sm:object-center select-none"
+                />
+
+                {/* Deep Forest Green Gradient Overlay for Maximum Text Contrast */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#06301A] via-[#06301A]/95 sm:via-[#06301A]/80 to-transparent/30 z-0 pointer-events-none" />
+
+                {/* Content */}
+                <div className="relative z-10 max-w-2xl lg:max-w-3xl space-y-3 sm:space-y-4">
                   {/* Status Pill */}
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#125835] text-emerald-200 rounded-full text-xs font-black uppercase tracking-wider border border-emerald-500/30">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#125835]/90 backdrop-blur-sm text-emerald-200 rounded-full text-xs font-black uppercase tracking-wider border border-emerald-500/30 shadow-2xs">
                     <span className="w-4 h-4 rounded-full bg-[#85E3B3] flex items-center justify-center text-[#0B4628]">
                       <Check className="w-3 h-3 stroke-[3]" />
                     </span>
@@ -501,12 +505,12 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                   </p>
                 </div>
 
-                {/* Two Frosted Badges: ORDER ID & PAYMENT METHOD with responsive wrap on mobile */}
-                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+                {/* Frosted Badges: ORDER ID, PAYMENT METHOD, ORDER PLACED */}
+                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-6">
                   {/* Order ID Card */}
                   <div 
                     onClick={() => handleCopyOrderId(selectedOrder.order_number)}
-                    className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/15 flex items-center gap-3 cursor-pointer hover:bg-white/15 transition-colors"
+                    className="bg-black/35 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/20 flex items-center gap-3 cursor-pointer hover:bg-black/45 transition-colors shadow-2xs"
                     title="Click to copy Order ID"
                   >
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/15 flex items-center justify-center text-emerald-200 shrink-0">
@@ -521,14 +525,14 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                       </span>
                     </div>
                     {copiedOrderId === selectedOrder.order_number ? (
-                      <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded-md">Copied!</span>
+                      <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-md">Copied!</span>
                     ) : (
                       <Copy className="w-4 h-4 text-emerald-300/70" />
                     )}
                   </div>
 
                   {/* Payment Method Card */}
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/15 flex items-center gap-3">
+                  <div className="bg-black/35 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/20 flex items-center gap-3 shadow-2xs">
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/15 flex items-center justify-center text-emerald-200 shrink-0">
                       <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
@@ -543,7 +547,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                   </div>
 
                   {/* Placed Timestamp Card */}
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/15 flex items-center gap-3 sm:col-span-2 lg:col-span-1">
+                  <div className="bg-black/35 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/20 flex items-center gap-3 shadow-2xs sm:col-span-2 lg:col-span-1">
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/15 flex items-center justify-center text-emerald-200 shrink-0">
                       <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
@@ -558,12 +562,6 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                   </div>
                 </div>
 
-                {/* Subtle Kerala Leaf Pattern Overlay (SVG pure vector) */}
-                <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 pointer-events-none hidden sm:block">
-                  <svg viewBox="0 0 100 100" className="w-full h-full fill-white">
-                    <path d="M50 0 C70 30 70 70 50 100 C30 70 30 30 50 0 Z" />
-                  </svg>
-                </div>
               </div>
 
               {/* MAIN CONTENT GRID: 2 Columns on PC (lg:grid-cols-12), 1 Column on Mobile */}
