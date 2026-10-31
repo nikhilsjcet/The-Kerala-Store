@@ -194,10 +194,10 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
                 <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-[11px] text-gray-400">
-                      {user ? 'Signed in as' : 'Welcome to The Kerala Store'}
+                      {user ? 'Signed in as' : 'Account'}
                     </p>
                     <p className="text-sm font-bold text-gray-900 truncate">
-                      {user ? user.full_name : 'Guest Shopper'}
+                      {user ? user.full_name : 'Guest'}
                     </p>
                     <p className="text-xs text-[#0B4628] font-medium">
                       {user ? (isAdmin ? 'Store Administrator' : 'Kerala Shopper') : 'Login to save wishlist & track orders'}

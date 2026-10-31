@@ -106,7 +106,7 @@ export const AuthModal: React.FC = () => {
             <KeralaStoreLogo size="lg" className="mx-auto" />
             <div className="space-y-1">
               <h2 id="auth-modal-title" className="text-2xl font-black text-gray-900 tracking-tight">
-                Welcome to The Kerala Store
+                Sign In
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 max-w-xs mx-auto">
                 Sign in with your Google account to track orders, save wishlists, and enjoy seamless shopping.

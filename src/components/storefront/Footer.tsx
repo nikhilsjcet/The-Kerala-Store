@@ -61,19 +61,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateCategory, onOpenPolicy
                 </div>
               </div>
             </div>
-
-            {/* Social Icons */}
-            <div className="flex items-center space-x-3 mt-6">
-              <a 
-                href="https://instagram.com/thekeralastore_" 
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="w-8 h-8 rounded-full bg-pink-50 hover:bg-pink-600 hover:text-white flex items-center justify-center text-pink-600 transition-colors shadow-2xs"
-              >
-                <Instagram className="w-4 h-4" />
-              </a>
-            </div>
           </div>
 
           {/* Column 2: Shop Department Links (Exact match from screenshot) */}
