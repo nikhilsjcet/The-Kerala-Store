@@ -18,15 +18,15 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
           body: (
             <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
               <p>
-                <strong>TheKeralaStore</strong> is a premier e-commerce dropshipping platform dedicated to bringing you useful, vetted, high-demand products at honest prices.
+                <strong>TheKeralaStore</strong> is an independent e-commerce dropshipping storefront powered by the <strong>Meesho Marketplace (Meesho Wholesale)</strong>, dedicated to delivering useful, vetted, high-demand products at honest wholesale prices.
               </p>
               <p>
-                While rooted in the trusted hospitality and meticulous standards of Kerala, we operate as a general dropshipping store sourcing from top domestic and international manufacturers across electronics, smart audio, home lifestyle, and personal tech.
+                While rooted in the trusted hospitality and meticulous standards of Kerala, we operate as a general dropshipping store sourcing directly from top domestic suppliers and manufacturers across electronics, home lifestyle, and fashion.
               </p>
               <div className="p-4 bg-green-50 rounded-xl border border-green-200 text-[#0A5C36]">
                 <h4 className="font-bold text-sm mb-1">Our Core Promise</h4>
                 <p className="text-xs">
-                  Every product listed on our store undergoes rigorous supplier quality verification, guaranteed safe packaging, and fast trackable courier dispatch to your doorstep.
+                  Every product listed on our store undergoes supplier quality verification, safe packaging, and fast trackable courier dispatch to your doorstep nationwide.
                 </p>
               </div>
             </div>
@@ -159,9 +159,9 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
                 </p>
               </div>
               <div className="p-3 bg-gray-50 rounded-xl">
-                <h4 className="font-bold text-gray-900">What is the return period?</h4>
-                <p className="mt-1 text-xs">
-                  We offer a 7-day hassle-free replacement or refund guarantee for any defective or damaged products.
+                <h4 className="font-bold text-gray-900">What is the return policy?</h4>
+                <p className="mt-1 text-xs leading-relaxed">
+                  As a Meesho dropshipping platform, returns and refunds are governed strictly by each product's specific listing on Meesho. For return-eligible products, we offer a 7-day replacement or refund window for defective or damaged items. Non-returnable designated items cannot be returned.
                 </p>
               </div>
             </div>

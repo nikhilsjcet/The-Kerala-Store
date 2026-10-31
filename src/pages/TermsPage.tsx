@@ -79,13 +79,13 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onNavigate }) => {
           <section className="space-y-3 pt-4 border-t border-gray-100">
             <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-emerald-100 text-[#0A5C36] flex items-center justify-center text-xs font-bold shrink-0">2</span>
-              <span>Store Operations &amp; Dropshipping Business Model</span>
+              <span>Meesho Dropshipping Platform &amp; Business Model</span>
             </h2>
             <p>
-              The Kerala Store curates and showcases products spanning electronics, home essentials, wellness, lifestyle, and regional specialties. We collaborate with verified domestic suppliers, distributors, and logistics partners to fulfill orders directly to your doorstep.
+              <strong>The Kerala Store is an independent dropshipping platform</strong> that sources and fulfills products through the <strong>Meesho Marketplace (Meesho Wholesale)</strong>. Products featured across our catalog are procured directly from and fulfilled by verified domestic wholesalers, manufacturers, and merchant suppliers operating on Meesho.
             </p>
             <p>
-              While we inspect and maintain strict quality criteria with all fulfillment partners, slight packaging variations may occur depending on supplier batch releases.
+              The Kerala Store acts as an e-commerce storefront providing product curation, secure payment processing, order management, and customer support. Orders placed on our platform are transmitted to Meesho suppliers for packing and doorstep dispatch via contracted national courier partners.
             </p>
           </section>
 
@@ -132,10 +132,27 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onNavigate }) => {
             </p>
           </section>
 
-          {/* Section 6 */}
+          {/* Section 6 - Dedicated Meesho Return Policy */}
           <section className="space-y-3 pt-4 border-t border-gray-100">
             <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-emerald-100 text-[#0A5C36] flex items-center justify-center text-xs font-bold shrink-0">6</span>
+              <span>Returns, Refunds &amp; Meesho Product Returnability</span>
+            </h2>
+            <p>
+              Because our order fulfillment operates on the Meesho dropshipping infrastructure, <strong>all return, exchange, and refund requests are governed strictly by the individual product return policy listed on Meesho</strong>:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li><strong>Product-Specific Eligibility:</strong> Returns are accepted only if that specific product is designated as "Returnable" by the supplier on the Meesho platform. If an item is marked as non-returnable on Meesho, no return or refund can be entertained.</li>
+              <li><strong>7-Day Return Window:</strong> For return-eligible items, returns must be requested within 7 calendar days of doorstep delivery for issues concerning defect, breakage, wrong item delivery, or missing components.</li>
+              <li><strong>Original Packaging Mandatory:</strong> Items must be returned in their original packaging with all manufacturer tags, barcodes, accessories, and promotional extras untouched. Used, washed, or altered items will be rejected.</li>
+              <li><strong>Verification &amp; Refund Disbursement:</strong> Refunds are processed solely after the returned package is collected by the courier partner and passes physical verification in accordance with Meesho's return logistics standards.</li>
+            </ul>
+          </section>
+
+          {/* Section 7 */}
+          <section className="space-y-3 pt-4 border-t border-gray-100">
+            <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-emerald-100 text-[#0A5C36] flex items-center justify-center text-xs font-bold shrink-0">7</span>
               <span>Intellectual Property</span>
             </h2>
             <p>
@@ -143,10 +160,10 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onNavigate }) => {
             </p>
           </section>
 
-          {/* Section 7 */}
+          {/* Section 8 */}
           <section className="space-y-3 pt-4 border-t border-gray-100">
             <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-emerald-100 text-[#0A5C36] flex items-center justify-center text-xs font-bold shrink-0">7</span>
+              <span className="w-6 h-6 rounded-full bg-emerald-100 text-[#0A5C36] flex items-center justify-center text-xs font-bold shrink-0">8</span>
               <span>Governing Law &amp; Jurisdiction</span>
             </h2>
             <p>
@@ -154,10 +171,10 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onNavigate }) => {
             </p>
           </section>
 
-          {/* Section 8 */}
+          {/* Section 9 */}
           <section className="space-y-3 pt-4 border-t border-gray-100">
             <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-emerald-100 text-[#0A5C36] flex items-center justify-center text-xs font-bold shrink-0">8</span>
+              <span className="w-6 h-6 rounded-full bg-emerald-100 text-[#0A5C36] flex items-center justify-center text-xs font-bold shrink-0">9</span>
               <span>Contact Us</span>
             </h2>
             <p>

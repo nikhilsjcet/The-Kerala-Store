@@ -244,7 +244,13 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
             <div className="relative rounded-3xl overflow-hidden shadow-sm border-2 border-[#064024] bg-[#0B4628] text-white min-h-[220px] sm:min-h-[260px] lg:min-h-[280px] flex items-center">
               
               {/* Seamless Right-Aligned Foliage & Clean Unprinted Parcel Package (100% Text-Free Image) */}
-              <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[65%] lg:w-[55%] pointer-events-none overflow-hidden flex items-center justify-end">
+              <div 
+                className="absolute right-0 top-0 bottom-0 w-full sm:w-[65%] lg:w-[55%] pointer-events-none overflow-hidden flex items-center justify-end"
+                style={{
+                  WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,1) 50%)',
+                  maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,1) 50%)'
+                }}
+              >
                 <img
                   src="/mockup/kerala-parcel-green-clean.jpg"
                   alt="The Kerala Store Order Delivery"
@@ -341,12 +347,12 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                       <div
                         key={ord.id}
                         onClick={() => handleOpenOrderDetails(ord)}
-                        className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs hover:shadow-md hover:border-[#0A5C36]/50 transition-all cursor-pointer p-4 sm:p-6 lg:p-7 space-y-4 group"
+                        className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs hover:shadow-md hover:border-[#0A5C36]/50 transition-all cursor-pointer p-3.5 sm:p-6 lg:p-7 space-y-3 sm:space-y-4 group overflow-hidden max-w-full"
                       >
                         {/* Top Row: Thumbnail, Product Info, Price, Chevron */}
-                        <div className="flex items-start gap-4 sm:gap-6">
-                          {/* Large Responsive Thumbnail */}
-                          <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-2xl bg-[#F5F5F3] border border-gray-100 p-1 shrink-0 overflow-hidden group-hover:scale-102 transition-transform">
+                        <div className="flex items-start gap-3 sm:gap-5 min-w-0">
+                          {/* Responsive Thumbnail */}
+                          <div className="w-16 h-20 sm:w-22 sm:h-24 lg:w-28 lg:h-28 rounded-2xl bg-[#F5F5F3] border border-gray-100 p-1 shrink-0 overflow-hidden group-hover:scale-102 transition-transform">
                             <img
                               src={firstItem?.product_image || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=400&q=80'}
                               alt={firstItem?.product_title || 'The Kerala Store Product'}
@@ -355,51 +361,51 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                           </div>
 
                           {/* Content */}
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <h3 className="font-extrabold text-gray-900 text-base sm:text-lg lg:text-xl leading-snug group-hover:text-[#0A5C36] transition-colors line-clamp-2">
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-extrabold text-gray-900 text-sm sm:text-base lg:text-lg leading-snug group-hover:text-[#0A5C36] transition-colors line-clamp-2 break-words">
                                   {firstItem?.product_title || 'Curated Product'}
                                   {(ord.items?.length || 0) > 1 && (
-                                    <span className="text-xs sm:text-sm font-semibold text-gray-500 ml-2">
-                                      +{ord.items!.length - 1} more item{(ord.items!.length - 1) > 1 ? 's' : ''}
+                                    <span className="text-xs font-semibold text-gray-500 ml-1.5 whitespace-nowrap">
+                                      +{ord.items!.length - 1} more
                                     </span>
                                   )}
                                 </h3>
-                                <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
-                                  Quantity: <strong className="text-gray-800">{totalItemsCount}</strong>
+                                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                                  Qty: <strong className="text-gray-800">{totalItemsCount}</strong>
                                 </p>
                               </div>
 
-                              <div className="text-right shrink-0 flex items-center gap-2">
-                                <span className="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl">
+                              <div className="text-right shrink-0 flex items-center gap-1.5 pl-1">
+                                <span className="font-black text-gray-900 text-base sm:text-xl lg:text-2xl whitespace-nowrap">
                                   {formatINR(ord.total_amount)}
                                 </span>
-                                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#0A5C36] group-hover:translate-x-1 transition-all" />
+                                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-[#0A5C36] group-hover:translate-x-0.5 transition-all shrink-0" />
                               </div>
                             </div>
 
                             {/* Badges Row: Order ID pill and Status pill without text cropping */}
-                            <div className="flex items-center gap-2.5 flex-wrap pt-1">
+                            <div className="flex items-center gap-2 flex-wrap pt-1">
                               {/* Order ID Pill with Copy button */}
                               <button
                                 type="button"
                                 onClick={(e) => handleCopyOrderId(ord.order_number, e)}
                                 title="Click to copy Order ID"
-                                className="inline-flex items-center gap-1.5 bg-[#F3F4F6] hover:bg-[#E5E7EB] text-gray-800 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-mono font-semibold border border-gray-200/90 transition-colors"
+                                className="inline-flex items-center gap-1.5 bg-[#F3F4F6] hover:bg-[#E5E7EB] text-gray-800 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-mono font-semibold border border-gray-200/90 transition-colors max-w-full"
                               >
-                                <FileText className="w-3.5 h-3.5 text-gray-500" />
-                                <span>Order ID: {ord.order_number}</span>
+                                <FileText className="w-3 h-3 text-gray-500 shrink-0" />
+                                <span className="truncate">Order ID: {ord.order_number}</span>
                                 {copiedOrderId === ord.order_number ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                  <Check className="w-3 h-3 text-emerald-600 shrink-0" />
                                 ) : (
-                                  <Copy className="w-3.5 h-3.5 text-gray-400 hover:text-gray-700" />
+                                  <Copy className="w-3 h-3 text-gray-400 hover:text-gray-700 shrink-0" />
                                 )}
                               </button>
 
                               {/* Status Badge Pill */}
-                              <span className={`inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold px-3.5 py-1.5 rounded-full border ${badge.pillColor}`}>
-                                <span className={`w-2 h-2 rounded-full ${badge.dotColor}`} />
+                              <span className={`inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 rounded-full border ${badge.pillColor}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${badge.dotColor}`} />
                                 <span>{badge.label}</span>
                               </span>
                             </div>
@@ -407,9 +413,9 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                         </div>
 
                         {/* Status Update Box: Inside Card */}
-                        <div className="bg-[#FAF6F0] rounded-2xl p-4 sm:p-5 border border-[#F0E9DF] flex items-start gap-3.5 sm:gap-4">
-                          <div className="w-10 h-10 rounded-full bg-[#F3E8D7] flex items-center justify-center text-[#92400E] shrink-0 mt-0.5">
-                            <Package className="w-5 h-5" />
+                        <div className="bg-[#FAF6F0] rounded-2xl p-3.5 sm:p-5 border border-[#F0E9DF] flex items-start gap-3 sm:gap-4">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#F3E8D7] flex items-center justify-center text-[#92400E] shrink-0 mt-0.5">
+                            <Package className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
                           <div className="flex-1 min-w-0 space-y-1">
                             <h4 className="font-extrabold text-gray-900 text-xs sm:text-sm lg:text-base">
@@ -418,7 +424,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                             <p className="text-xs sm:text-sm text-gray-600 leading-snug">
                               {badge.description}
                             </p>
-                            <p className="text-[11px] sm:text-xs text-gray-400 pt-0.5">
+                            <p className="text-[10px] sm:text-xs text-gray-400 pt-0.5">
                               {formatCustomDate(ord.created_at)}
                             </p>
                           </div>
@@ -482,7 +488,13 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
               <div className="relative rounded-3xl overflow-hidden shadow-md border-2 border-[#064024] bg-[#0B4628] text-white min-h-[260px] sm:min-h-[300px] lg:min-h-[320px] flex flex-col justify-between p-6 sm:p-8 lg:p-12">
                 
                 {/* Seamless Right-Aligned Foliage & Clean Unprinted Parcel Package (100% Text-Free Image) */}
-                <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[65%] lg:w-[55%] pointer-events-none overflow-hidden flex items-center justify-end">
+                <div 
+                  className="absolute right-0 top-0 bottom-0 w-full sm:w-[65%] lg:w-[55%] pointer-events-none overflow-hidden flex items-center justify-end"
+                  style={{
+                    WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,1) 50%)',
+                    maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,1) 50%)'
+                  }}
+                >
                   <img
                     src="/mockup/kerala-parcel-green-clean.jpg"
                     alt="Order Confirmed - The Kerala Store"
@@ -700,8 +712,8 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
 
                   </div>
 
-                  {/* 2. ORDERED PRODUCTS CARD */}
-                  <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs p-5 sm:p-7 space-y-4">
+                  {/* 2. ORDERED PRODUCTS CARD (Exact layout matching Screenshot 1: never clips on mobile) */}
+                  <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs p-4 sm:p-6 lg:p-7 space-y-4 overflow-hidden max-w-full">
                     <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                       <div className="flex items-center gap-2">
                         <Layers className="w-5 h-5 text-[#0A5C36]" />
@@ -716,32 +728,36 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
 
                     <div className="divide-y divide-gray-100 space-y-3">
                       {(selectedOrder.items || []).map((it, idx) => (
-                        <div key={idx} className="pt-3 first:pt-0 flex items-center gap-4 sm:gap-5">
-                          <img
-                            src={it.product_image || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=400&q=80'}
-                            alt={it.product_title}
-                            className="w-18 h-18 sm:w-20 sm:h-20 lg:w-24 lg:h-24 object-contain rounded-2xl bg-stone-50 border border-gray-100 p-1 shrink-0"
-                          />
-
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <h3 className="font-extrabold text-gray-900 text-xs sm:text-sm lg:text-base leading-snug line-clamp-2">
-                              {it.product_title}
-                            </h3>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
-                              <span>Qty: <strong className="text-gray-800">{it.quantity}</strong></span>
-                              <span>•</span>
-                              <span className="font-mono text-[11px] text-gray-400">
-                                SKU: {it.sku || `TKS-${selectedOrder.id?.slice(0, 4) || '4409'}`}
-                              </span>
-                            </div>
+                        <div key={idx} className="pt-3 first:pt-0 flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+                          {/* Compact thumbnail for mobile */}
+                          <div className="w-14 h-14 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-xl sm:rounded-2xl bg-stone-50 border border-gray-100 p-1 shrink-0 overflow-hidden flex items-center justify-center">
+                            <img
+                              src={it.product_image || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=400&q=80'}
+                              alt={it.product_title}
+                              className="w-full h-full object-contain"
+                            />
                           </div>
 
-                          <div className="text-right shrink-0">
-                            <span className="font-black text-gray-900 text-base sm:text-lg lg:text-xl">
+                          {/* Product Details: stacked title, SKU, Qty */}
+                          <div className="flex-1 min-w-0 space-y-0.5">
+                            <h3 className="font-extrabold text-gray-900 text-xs sm:text-sm lg:text-base leading-snug line-clamp-2 break-words">
+                              {it.product_title}
+                            </h3>
+                            <p className="font-mono text-[11px] text-gray-400 truncate">
+                              SKU: {it.sku || `TKS-${selectedOrder.id?.slice(0, 4) || '4409'}`}
+                            </p>
+                            <p className="text-xs text-gray-600 font-medium">
+                              Qty: <strong className="text-gray-900 font-bold">{it.quantity}</strong>
+                            </p>
+                          </div>
+
+                          {/* Price: strictly inside card boundaries with whitespace-nowrap */}
+                          <div className="text-right shrink-0 pl-2">
+                            <span className="font-black text-gray-900 text-base sm:text-lg lg:text-xl whitespace-nowrap block">
                               {formatINR(it.total_price || (it.unit_price * it.quantity))}
                             </span>
                             {it.quantity > 1 && (
-                              <p className="text-[10px] text-gray-400">
+                              <p className="text-[10px] text-gray-400 whitespace-nowrap">
                                 {formatINR(it.unit_price)} each
                               </p>
                             )}
@@ -749,6 +765,22 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                         </div>
                       ))}
                     </div>
+
+                    {/* Integrated Total Amount Pill inside Ordered Products Card (matches Screenshot 1) */}
+                    <div className="mt-4 p-3.5 sm:p-4 bg-[#EDF7F2] border border-[#D5EFE1] rounded-2xl flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#0A5C36] shadow-2xs">
+                          <Wallet className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs sm:text-sm text-gray-700 font-bold">
+                          Total Amount
+                        </span>
+                      </div>
+                      <span className="text-lg sm:text-2xl font-black text-[#0A5C36]">
+                        {formatINR(selectedOrder.total_amount)}
+                      </span>
+                    </div>
+
                   </div>
 
                 </div>

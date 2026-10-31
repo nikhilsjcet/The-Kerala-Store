@@ -330,16 +330,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateCategory, onOpenPolicy
               </h5>
             </div>
             <p className="text-[11px] text-gray-600 leading-relaxed">
-              <strong>About The Kerala Store:</strong> This website is an independent e-commerce dropshipping initiative operated by a student based in <strong>Kottayam, Kerala, India</strong> for educational experience and pocket money. Please note that this is an individual-run retail dropshipping storefront and <strong>not a registered company, corporation, or physical retail showroom</strong>.
+              <strong>About The Kerala Store:</strong> This website is an independent e-commerce dropshipping initiative operated from <strong>Kottayam, Kerala, India</strong>. Please note that this is an individual-run retail storefront utilizing the <strong>Meesho Dropshipping Platform</strong> and domestic wholesale networks.
             </p>
             <p className="text-[11px] text-gray-600 leading-relaxed">
-              <strong>Dropshipping Business Model:</strong> We do not hold physical inventory in Kottayam. When a customer places an order on our store, we manually source and place the corresponding item with verified Indian wholesale suppliers and manufacturers (including supplier networks like Meesho and domestic warehouse distributors). Items are marked up with a modest margin to support platform operation.
+              <strong>Meesho Dropshipping Model:</strong> We curate high-demand products directly from verified manufacturers and wholesale sellers on the <strong>Meesho Marketplace</strong>. When you place an order, the item is sourced and fulfilled directly by the Meesho supplier network with modest markup to maintain operations.
             </p>
             <p className="text-[11px] text-gray-600 leading-relaxed">
-              <strong>Direct Supplier Shipping:</strong> All products are packed and dispatched directly from third-party supplier warehouses across India to your shipping address using standard courier partners (Delhivery, Shadowfax, XpressBees, Blue Dart). Real-time tracking numbers are updated as soon as the supplier fulfills the shipment.
+              <strong>Direct Supplier Shipping:</strong> Parcels are dispatched directly from supplier fulfillment centers across India using standard logistics networks (Delhivery, Shadowfax, Xpressbees, India Post). Real-time AWB tracking numbers are provided on our tracking page.
             </p>
             <p className="text-[11px] text-gray-600 leading-relaxed">
-              <strong>Customer Support &amp; 7-Day Replacement:</strong> We stand 100% behind our customers. If you receive a damaged, defective, or incorrect product, we personally handle your return/replacement with our wholesale partners under our 7-day replacement policy. For all questions, delivery updates, or help, reach us directly via Instagram DM: <a href="https://instagram.com/thekeralastore_" target="_blank" rel="noopener noreferrer" className="font-bold text-pink-700 hover:underline">@thekeralastore_</a>.
+              <strong>Return &amp; Refund Policy Governed by Meesho:</strong> Returns, replacements, and refunds are strictly subject to and governed by the specific return policy of each product as listed on Meesho (7-day window for return-eligible items; non-returnable categories cannot be returned). For any questions or returns, DM our Kerala team on Instagram: <a href="https://instagram.com/thekeralastore_" target="_blank" rel="noopener noreferrer" className="font-bold text-pink-700 hover:underline">@thekeralastore_</a>.
             </p>
           </div>
 

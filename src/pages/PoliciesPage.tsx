@@ -123,16 +123,32 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ onNavigate, initialT
         {/* Content Container */}
         <div className="bg-white rounded-3xl border border-gray-200/90 shadow-sm p-6 sm:p-10 space-y-8">
           
-          {/* TAB 1: RETURNS & REFUNDS */}
+          {/* TAB 1: RETURNS & REFUNDS (Governed by Meesho Dropshipping Platform Rules) */}
           {activeTab === 'returns' && (
             <div className="space-y-6">
               <div className="border-b border-gray-100 pb-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200">
+                    Meesho Dropshipping Fulfillment
+                  </span>
+                </div>
                 <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2.5">
                   <RefreshCw className="w-6 h-6 text-[#0A5C36]" />
                   Return &amp; Refund Policy
                 </h2>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  At The Kerala Store, customer satisfaction is our top priority. We offer a transparent, hassle-free 7-day return and replacement policy.
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">
+                  The Kerala Store is an independent retail storefront that operates on a <strong>dropshipping platform model powered by the Meesho Marketplace</strong>. Accordingly, all returns, replacements, and refund terms are strictly governed by the specific return policy of each individual product as listed on Meesho.
+                </p>
+              </div>
+
+              {/* Crucial Meesho Platform Return Policy Alert Banner */}
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50 border-2 border-purple-200/90 rounded-2xl space-y-2">
+                <div className="flex items-center gap-2 text-purple-900 font-extrabold text-sm sm:text-base">
+                  <AlertCircle className="w-5 h-5 text-purple-700 shrink-0" />
+                  <span>Important: Product-Specific Return Policy via Meesho</span>
+                </div>
+                <p className="text-xs sm:text-sm text-purple-950/90 leading-relaxed">
+                  As our products are sourced directly from verified wholesale suppliers and manufacturers on <strong>Meesho</strong>, return eligibility is <strong>determined solely by the individual product listing on Meesho</strong>. While most categories enjoy a 7-day hassle-free return window, products marked by suppliers as non-returnable on Meesho cannot be returned or refunded.
                 </p>
               </div>
 
@@ -141,64 +157,75 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ onNavigate, initialT
                 <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-1.5">
                   <span className="text-emerald-800 font-extrabold text-sm flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-[#0A5C36]" />
-                    7-Day Window
+                    7-Day Meesho Window
                   </span>
                   <p className="text-xs text-emerald-950/80">
-                    Initiate a return or exchange request within 7 calendar days of doorstep delivery.
+                    For eligible items, initiate a return or replacement request within 7 calendar days of doorstep delivery.
                   </p>
                 </div>
 
                 <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-1.5">
                   <span className="text-emerald-800 font-extrabold text-sm flex items-center gap-1.5">
                     <Truck className="w-4 h-4 text-[#0A5C36]" />
-                    Free Doorstep Pickup
+                    Reverse Courier Pickup
                   </span>
                   <p className="text-xs text-emerald-950/80">
-                    Our courier partner will pick up the package directly from your delivery address across 19,000+ pin codes.
+                    Handled directly by Meesho's logistics partners (Delhivery, Shadowfax, Xpressbees) from your delivery address.
                   </p>
                 </div>
 
                 <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-1.5">
                   <span className="text-emerald-800 font-extrabold text-sm flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-[#0A5C36]" />
-                    Fast 100% Refund
+                    Verified 100% Refund
                   </span>
                   <p className="text-xs text-emerald-950/80">
-                    Refunds are initiated within 24-48 hours of return pickup and credited back to your original source.
+                    Refunds are initiated within 24-48 hours once the reverse pickup passes Meesho supplier verification.
                   </p>
                 </div>
               </div>
 
               {/* Detailed Terms */}
               <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
-                <h3 className="text-base font-bold text-gray-900">1. Eligibility for Returns &amp; Replacements</h3>
+                <h3 className="text-base font-bold text-gray-900">1. Meesho Return Eligibility &amp; Guidelines</h3>
                 <p>
-                  You are eligible for a replacement or full refund under the following circumstances:
+                  Returns and replacements are accepted <strong>only for items designated as returnable on the Meesho Marketplace</strong> at the time of purchase under the following conditions:
                 </p>
                 <ul className="list-disc pl-5 space-y-1.5">
-                  <li><strong>Damaged or Defective Items:</strong> Product received is broken, physically damaged, or not functioning as described.</li>
-                  <li><strong>Wrong Item Received:</strong> The item delivered does not match your ordered product, size, or color.</li>
-                  <li><strong>Missing Components:</strong> Essential accessories, manuals, or parts are missing from the original manufacturer packaging.</li>
-                  <li><strong>Quality Issues:</strong> Authentic manufacturing defect identified within the 7-day return period.</li>
+                  <li><strong>Damaged, Defective, or Tampered Items:</strong> The product received is physically broken, cracked, defective, or package arrived tampered.</li>
+                  <li><strong>Wrong Item or Incorrect Variant Delivered:</strong> Product delivered does not match your ordered model, color, or size.</li>
+                  <li><strong>Missing Accessories or Components:</strong> Parts, chargers, or components listed on the original manufacturer packaging are missing.</li>
+                  <li><strong>Original Packaging Requirement:</strong> Items must be returned unused, unwashed, and undamaged with all original price tags, brand labels, barcodes, and supplier packaging intact.</li>
                 </ul>
 
-                <h3 className="text-base font-bold text-gray-900 pt-2">2. How to Request a Return or Replacement</h3>
+                <h3 className="text-base font-bold text-gray-900 pt-2">2. Non-Returnable Products (Strict Meesho Policy)</h3>
                 <p>
-                  Initiating a return is quick and straightforward:
-                </p>
-                <ol className="list-decimal pl-5 space-y-1.5">
-                  <li>Navigate to <button onClick={() => onNavigate('orders')} className="text-[#0A5C36] font-bold underline">Track My Orders</button> or message our support team on Instagram <a href="https://instagram.com/thekeralastore_" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-bold underline">@thekeralastore_</a>.</li>
-                  <li>Provide your Order ID (e.g. <span className="font-mono bg-stone-100 px-1.5 py-0.5 rounded text-gray-800">TKS-2026-XXXXXX</span>) and 1-2 clear photos or short video showing the issue.</li>
-                  <li>Our fulfillment team verifies the request within 12-24 hours and arranges a reverse pickup via Delhivery or BlueDart.</li>
-                </ol>
-
-                <h3 className="text-base font-bold text-gray-900 pt-2">3. Refund Methods &amp; Timelines</h3>
-                <p>
-                  Once the courier partner completes the pickup scan, your refund is approved:
+                  In accordance with Meesho wholesale terms, the following categories are <strong>strictly non-returnable and non-refundable</strong> once delivered:
                 </p>
                 <ul className="list-disc pl-5 space-y-1.5">
-                  <li><strong>Prepaid Orders (UPI, Cards, NetBanking):</strong> 100% refund credited back to the original bank account or card within 3-5 business days.</li>
-                  <li><strong>Cash on Delivery (COD):</strong> Refund transferred directly to your preferred UPI ID (GPay / PhonePe / Paytm) or IMPS bank transfer within 24-48 hours.</li>
+                  <li><strong>Personal Hygiene &amp; Innerwear:</strong> Undergarments, socks, personal care devices, and hygiene products for sanitary safety.</li>
+                  <li><strong>Cosmetics &amp; Skincare:</strong> Beauty products, perfumes, and cosmetics if the original seal or packaging has been unsealed.</li>
+                  <li><strong>Customized / Clearance Products:</strong> Items clearly marked as clearance or "Non-Returnable" on the product listing by the Meesho seller.</li>
+                  <li><strong>Items Returned Without Original Tags / Box:</strong> Any returned item with missing tags, torn packaging, or signs of use will be rejected by the Meesho inspection team and will not be eligible for refund.</li>
+                </ul>
+
+                <h3 className="text-base font-bold text-gray-900 pt-2">3. How to Request a Return or Replacement</h3>
+                <p>
+                  Because we coordinate with Meesho suppliers on your behalf, raising a return request is simple:
+                </p>
+                <ol className="list-decimal pl-5 space-y-1.5">
+                  <li>Go to <button onClick={() => onNavigate('orders')} className="text-[#0A5C36] font-bold underline">Track My Orders</button> or DM our support team on Instagram at <a href="https://instagram.com/thekeralastore_" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-bold underline">@thekeralastore_</a>.</li>
+                  <li>Provide your Order ID (e.g., <span className="font-mono bg-stone-100 px-1.5 py-0.5 rounded text-gray-800">TKS-2026-XXXXXX</span>) and 2-3 clear photographs or an unboxing video demonstrating the defect or issue.</li>
+                  <li>Our fulfillment team verifies the product's return eligibility against the supplier listing on Meesho and books a reverse pickup within 24 hours.</li>
+                </ol>
+
+                <h3 className="text-base font-bold text-gray-900 pt-2">4. Refund Methods &amp; Processing Timelines</h3>
+                <p>
+                  Once the courier agent completes the reverse pickup scan and the return is cleared by Meesho logistics:
+                </p>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li><strong>Online Prepaid Orders (Razorpay / UPI / Cards / NetBanking):</strong> 100% refund is initiated back to your original payment method within 24-48 hours (settles within 3-5 banking days).</li>
+                  <li><strong>Cash on Delivery (COD) Orders:</strong> Refund is transferred directly to your designated UPI ID (GPay, PhonePe, Paytm) or verified IMPS bank account within 24-48 hours of return pickup confirmation.</li>
                 </ul>
               </div>
             </div>
@@ -299,9 +326,18 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ onNavigate, initialT
                   <li>All payment transactions are encrypted end-to-end via 256-bit SSL protocols.</li>
                 </ul>
 
-                <h3 className="text-base font-bold text-gray-900 pt-2">3. Zero Third-Party Selling</h3>
+                <h3 className="text-base font-bold text-gray-900 pt-2">3. Meesho Dropshipping Fulfillment Logistics</h3>
                 <p>
-                  We have a strict <strong>no-sale policy</strong>. Your personal data is never sold, traded, or rented to external marketing agencies or data brokers.
+                  The Kerala Store utilizes the <strong>Meesho Dropshipping Platform</strong> to dispatch products directly from vetted suppliers to your doorstep:
+                </p>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li>Your necessary shipping information (customer name, delivery address, postal pincode, and contact telephone number) is shared securely with the <strong>Meesho Marketplace</strong> and its authorized logistics courier partners (Delhivery, Shadowfax, Xpressbees, India Post) solely for the operational fulfillment, dispatch, and delivery of your purchased parcel.</li>
+                  <li>No payment credentials, card numbers, or banking passwords are ever shared with suppliers or third-party logistics agents.</li>
+                </ul>
+
+                <h3 className="text-base font-bold text-gray-900 pt-2">4. Zero Third-Party Selling</h3>
+                <p>
+                  We maintain a strict <strong>no-sale privacy policy</strong>. Your personal contact details are never sold, rented, or distributed to external marketing agencies or unauthorized data brokers.
                 </p>
               </div>
             </div>
@@ -323,17 +359,17 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ onNavigate, initialT
               <div className="space-y-4 text-xs sm:text-sm text-gray-700 leading-relaxed">
                 <h3 className="text-base font-bold text-gray-900">Cancellation Before Dispatch</h3>
                 <p>
-                  Orders can be cancelled free of charge at any time prior to handoff to our courier partners. To cancel:
+                  Orders can be cancelled free of charge at any time prior to packaging and dispatch by our Meesho wholesale suppliers:
                 </p>
                 <ul className="list-disc pl-5 space-y-1.5">
                   <li>Visit <button onClick={() => onNavigate('orders')} className="text-[#0A5C36] font-bold underline">Track My Orders</button> and click on your active order.</li>
                   <li>Or send a quick DM on Instagram <a href="https://instagram.com/thekeralastore_" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-bold underline">@thekeralastore_</a> with your Order ID.</li>
-                  <li>For prepaid orders cancelled prior to courier dispatch, a 100% immediate refund is initiated to your original payment method.</li>
+                  <li>For prepaid orders cancelled prior to supplier courier dispatch, a 100% immediate refund is initiated to your original payment method.</li>
                 </ul>
 
                 <h3 className="text-base font-bold text-gray-900 pt-2">Cancellation After Dispatch</h3>
                 <p>
-                  If your package has already shipped and has an assigned courier waybill number, you may refuse delivery when the courier agent arrives at your doorstep. Upon receipt of courier return confirmation, your refund will be processed promptly.
+                  Once an order has been handed over to the courier partner with an assigned tracking number, it cannot be intercepted in transit. However, for products eligible for return on Meesho, you may either refuse delivery at your doorstep or initiate a 7-day return request upon delivery.
                 </p>
               </div>
             </div>
