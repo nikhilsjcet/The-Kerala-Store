@@ -7,140 +7,146 @@ interface PromoCardsProps {
 
 export const PromoCards: React.FC<PromoCardsProps> = ({ onSelectPromo }) => {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-5 select-none">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 select-none">
+      <div className="space-y-4 sm:space-y-6">
         
-        {/* Card 1: Home Essentials (Deep Forest Green #12472F) */}
-        <div 
-          onClick={() => onSelectPromo('home-essentials')}
-          className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#12472F] text-white p-5 sm:p-6 flex items-center justify-between min-h-[185px] sm:min-h-[205px] cursor-pointer shadow-xs hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 border border-[#0E3A26]"
-        >
-          {/* Left Text */}
-          <div className="relative z-10 max-w-[58%] flex flex-col justify-between h-full">
-            <div>
-              <span className="inline-block text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold text-emerald-300 mb-1">
-                Up to 40% Off
-              </span>
-              <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mb-4 text-white drop-shadow-xs">
-                Home <br />Essentials
-              </h3>
-            </div>
-
-            <div>
-              <button
-                onClick={(e) => { e.stopPropagation(); onSelectPromo('home-essentials'); }}
-                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full text-xs font-extrabold text-[#12472F] bg-white hover:bg-gray-100 shadow-sm group-hover:shadow transition-all"
-              >
-                <span>Shop Now</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
-          </div>
-
-          {/* Right Image: Seamless Soft Gradient Mask & Natural Edge Blend */}
-          <div 
-            className="absolute right-0 bottom-0 top-0 w-[55%] sm:w-[60%] overflow-hidden flex items-center justify-end pointer-events-none"
-            style={{
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)',
-              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)'
-            }}
-          >
-            {/* Multi-stage color gradient overlay to guarantee 100% seamless photo blending with zero hard cuts */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#12472F] via-[#12472F]/70 via-35% to-transparent z-10 pointer-events-none" />
-            <img
-              src="https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=700&q=80"
-              alt="Home Essentials"
-              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-            />
-          </div>
-        </div>
-
-        {/* Card 2: Electronics & Gadgets (Off-white/Cream #F5EFE8) */}
+        {/* Banner 1: Electronics & Gadgets (Luminous Studio Desk Setup matching Reference) */}
         <div 
           onClick={() => onSelectPromo('electronics')}
-          className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F5EFE8] text-gray-900 p-5 sm:p-6 flex items-center justify-between min-h-[185px] sm:min-h-[205px] cursor-pointer shadow-xs hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 border border-[#EBE3D8]"
+          className="group relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#EFF6FF] via-[#E2EEFE] to-[#D5E6FA] text-gray-900 p-6 sm:p-9 lg:p-12 flex items-center min-h-[220px] sm:min-h-[260px] lg:min-h-[290px] cursor-pointer shadow-xs hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border border-blue-100/90"
         >
           {/* Left Text */}
-          <div className="relative z-10 max-w-[58%] flex flex-col justify-between h-full">
+          <div className="relative z-10 max-w-[58%] sm:max-w-md lg:max-w-lg flex flex-col justify-between h-full space-y-3 sm:space-y-4">
             <div>
-              <span className="inline-block text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold text-gray-500 mb-1">
+              <span className="inline-block text-[11px] sm:text-xs uppercase tracking-wider font-extrabold text-blue-600 mb-1.5">
                 Latest Collection
               </span>
-              <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mb-4 text-gray-900">
+              <h3 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-extrabold text-[#0F172A] tracking-tight leading-[1.12] mb-1.5">
                 Electronics <br />&amp; Gadgets
               </h3>
+              <p className="text-xs sm:text-sm lg:text-base text-slate-600 font-medium">
+                Smart gadgets for a smarter you
+              </p>
             </div>
 
-            <div>
+            <div className="pt-1">
               <button
                 onClick={(e) => { e.stopPropagation(); onSelectPromo('electronics'); }}
-                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full text-xs font-extrabold text-gray-900 bg-white hover:bg-gray-50 shadow-sm group-hover:shadow transition-all border border-gray-200/60"
+                className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold text-white bg-[#0F172A] hover:bg-[#1E293B] shadow-sm group-hover:shadow transition-all cursor-pointer"
               >
                 <span>Shop Now</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
 
-          {/* Right Image: Seamless Soft Gradient Mask & Natural Edge Blend */}
+          {/* Right Image: Seamless Studio Photograph with Soft Fade */}
           <div 
-            className="absolute right-0 bottom-0 top-0 w-[55%] sm:w-[60%] overflow-hidden flex items-center justify-end pointer-events-none"
+            className="absolute right-0 bottom-0 top-0 w-[55%] sm:w-[60%] lg:w-[55%] overflow-hidden flex items-center justify-end pointer-events-none"
             style={{
               WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)',
               maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)'
             }}
           >
-            {/* Multi-stage cream gradient overlay to blend laptop/gadget image naturally into #F5EFE8 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#F5EFE8] via-[#F5EFE8]/75 via-35% to-transparent z-10 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#EFF6FF] via-[#EFF6FF]/60 via-30% to-transparent z-10 pointer-events-none" />
             <img
-              src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=700&q=80"
+              src="/mockup/banner-electronics-studio.jpg"
               alt="Electronics and Gadgets"
-              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover object-right group-hover:scale-103 transition-transform duration-700"
             />
           </div>
         </div>
 
-        {/* Card 3: Fashion Collection (Soft Peach #F7A380) */}
+        {/* Banner 2: Fashion Collection (Warm Peach Studio Apparel Rack matching Reference) */}
         <div 
           onClick={() => onSelectPromo('fashion')}
-          className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F7A380] text-gray-900 p-5 sm:p-6 flex items-center justify-between min-h-[185px] sm:min-h-[205px] cursor-pointer shadow-xs hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 border border-[#F2946E]"
+          className="group relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#FFF4EB] via-[#FDEBD7] to-[#FCD9BC] text-gray-900 p-6 sm:p-9 lg:p-12 flex items-center min-h-[220px] sm:min-h-[260px] lg:min-h-[290px] cursor-pointer shadow-xs hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border border-orange-100/90"
         >
           {/* Left Text */}
-          <div className="relative z-10 max-w-[58%] flex flex-col justify-between h-full">
+          <div className="relative z-10 max-w-[58%] sm:max-w-md lg:max-w-lg flex flex-col justify-between h-full space-y-3 sm:space-y-4">
             <div>
-              <span className="inline-block text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold text-amber-950/75 mb-1">
+              <span className="inline-block text-[11px] sm:text-xs uppercase tracking-wider font-extrabold text-[#C2410C] mb-1.5">
                 Trending Now
               </span>
-              <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mb-4 text-gray-900">
+              <h3 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-extrabold text-[#7C2D12] sm:text-gray-900 tracking-tight leading-[1.12] mb-1.5">
                 Fashion <br />Collection
               </h3>
+              <p className="text-xs sm:text-sm lg:text-base text-amber-950/75 font-medium">
+                Trendy styles for every occasion
+              </p>
             </div>
 
-            <div>
+            <div className="pt-1">
               <button
                 onClick={(e) => { e.stopPropagation(); onSelectPromo('fashion'); }}
-                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full text-xs font-extrabold text-gray-900 bg-white hover:bg-gray-50 shadow-sm group-hover:shadow transition-all border border-black/5"
+                className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold text-white bg-[#9A3412] hover:bg-[#7C2D12] shadow-sm group-hover:shadow transition-all cursor-pointer"
               >
                 <span>Shop Now</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
 
-          {/* Right Image: Seamless Soft Gradient Mask & Natural Edge Blend */}
+          {/* Right Image: Seamless Studio Photograph with Soft Fade */}
           <div 
-            className="absolute right-0 bottom-0 top-0 w-[55%] sm:w-[60%] overflow-hidden flex items-center justify-end pointer-events-none"
+            className="absolute right-0 bottom-0 top-0 w-[55%] sm:w-[60%] lg:w-[55%] overflow-hidden flex items-center justify-end pointer-events-none"
             style={{
               WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)',
               maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)'
             }}
           >
-            {/* Multi-stage peach gradient overlay to blend fashion image naturally into #F7A380 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#F7A380] via-[#F7A380]/75 via-35% to-transparent z-10 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#FFF4EB] via-[#FFF4EB]/60 via-30% to-transparent z-10 pointer-events-none" />
             <img
-              src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=700&q=80"
+              src="/mockup/banner-fashion-studio.jpg"
               alt="Fashion Collection"
-              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover object-right group-hover:scale-103 transition-transform duration-700"
+            />
+          </div>
+        </div>
+
+        {/* Banner 3: Home Essentials (Fresh Sage/Mint Studio Scene) */}
+        <div 
+          onClick={() => onSelectPromo('home-essentials')}
+          className="group relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#F0FDF4] via-[#DCFCE7]/70 to-[#BBF7D0]/50 text-gray-900 p-6 sm:p-9 lg:p-12 flex items-center min-h-[220px] sm:min-h-[260px] lg:min-h-[290px] cursor-pointer shadow-xs hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border border-emerald-100/90"
+        >
+          {/* Left Text */}
+          <div className="relative z-10 max-w-[58%] sm:max-w-md lg:max-w-lg flex flex-col justify-between h-full space-y-3 sm:space-y-4">
+            <div>
+              <span className="inline-block text-[11px] sm:text-xs uppercase tracking-wider font-extrabold text-[#0A5C36] mb-1.5">
+                Up to 40% Off
+              </span>
+              <h3 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-extrabold text-[#0B4628] tracking-tight leading-[1.12] mb-1.5">
+                Home <br />Essentials
+              </h3>
+              <p className="text-xs sm:text-sm lg:text-base text-emerald-950/75 font-medium">
+                Curated comfort for every corner
+              </p>
+            </div>
+
+            <div className="pt-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); onSelectPromo('home-essentials'); }}
+                className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold text-white bg-[#0A5C36] hover:bg-[#064024] shadow-sm group-hover:shadow transition-all cursor-pointer"
+              >
+                <span>Shop Now</span>
+                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+
+          {/* Right Image: Seamless Studio Photograph with Soft Fade */}
+          <div 
+            className="absolute right-0 bottom-0 top-0 w-[55%] sm:w-[60%] lg:w-[55%] overflow-hidden flex items-center justify-end pointer-events-none"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)',
+              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-[#F0FDF4] via-[#F0FDF4]/60 via-30% to-transparent z-10 pointer-events-none" />
+            <img
+              src="/mockup/banner-home-studio.jpg"
+              alt="Home Essentials"
+              className="w-full h-full object-cover object-right group-hover:scale-103 transition-transform duration-700"
             />
           </div>
         </div>

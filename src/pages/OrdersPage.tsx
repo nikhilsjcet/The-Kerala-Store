@@ -156,8 +156,23 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
       delivered: 5,
     };
     const current = statusMap[status] || 1;
-    if (current > step) return 'completed';
-    if (current === step) return 'current';
+
+    // When delivered, all 5 steps are completed and green-ticked
+    if (status === 'delivered' || current >= 5) {
+      return 'completed';
+    }
+
+    // Any milestone already achieved or confirmed is green-ticked (completed)
+    if (step <= current) {
+      return 'completed';
+    }
+
+    // The NEXT upcoming status to be achieved is goldened ('current')
+    if (step === current + 1) {
+      return 'current';
+    }
+
+    // Remaining future milestones stay upcoming (gray)
     return 'upcoming';
   };
 
@@ -199,8 +214,8 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
       default:
         return {
           label: 'Order Confirmed',
-          pillColor: 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]',
-          dotColor: 'bg-[#D97706]',
+          pillColor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+          dotColor: 'bg-emerald-600',
           title: 'Your order has been confirmed',
           description: 'We are processing your order for shipment.'
         };
@@ -412,19 +427,19 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                           </div>
                         </div>
 
-                        {/* Status Update Box: Inside Card */}
-                        <div className="bg-[#FAF6F0] rounded-2xl p-3.5 sm:p-5 border border-[#F0E9DF] flex items-start gap-3 sm:gap-4">
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#F3E8D7] flex items-center justify-center text-[#92400E] shrink-0 mt-0.5">
-                            <Package className="w-4 h-4 sm:w-5 sm:h-5" />
+                        {/* Status Update Box: Inside Card (Crisp White in Green Theme) */}
+                        <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-200/90 shadow-2xs flex items-start gap-3 sm:gap-4 ring-1 ring-emerald-500/10">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-[#0A5C36] shrink-0 mt-0.5">
+                            <Package className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A5C36]" />
                           </div>
                           <div className="flex-1 min-w-0 space-y-1">
-                            <h4 className="font-extrabold text-gray-900 text-xs sm:text-sm lg:text-base">
+                            <h4 className="font-extrabold text-[#0B4628] text-xs sm:text-sm lg:text-base">
                               {badge.title}
                             </h4>
                             <p className="text-xs sm:text-sm text-gray-600 leading-snug">
                               {badge.description}
                             </p>
-                            <p className="text-[10px] sm:text-xs text-gray-400 pt-0.5">
+                            <p className="text-[10px] sm:text-xs text-emerald-800/70 pt-0.5 font-medium">
                               {formatCustomDate(ord.created_at)}
                             </p>
                           </div>
@@ -669,16 +684,16 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                       </div>
                     </div>
 
-                    {/* CURRENT STATUS UPDATE CARD */}
-                    <div className="bg-[#FAF6F0] rounded-2xl p-4 sm:p-5 border border-[#F0E9DF] flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-full bg-[#F3E8D7] flex items-center justify-center text-[#92400E] shrink-0 mt-0.5">
-                        <Package className="w-5 h-5" />
+                    {/* CURRENT STATUS UPDATE CARD: Crisp White in Green Theme */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-emerald-200/90 shadow-2xs flex items-start gap-4 ring-1 ring-emerald-500/10">
+                      <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-[#0A5C36] shrink-0 mt-0.5">
+                        <Package className="w-5 h-5 text-[#0A5C36]" />
                       </div>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <span className="px-2.5 py-0.5 bg-[#F9ECC9] text-[#92400E] text-[10px] font-black uppercase tracking-wider rounded-full inline-block">
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <span className="px-2.5 py-0.5 bg-emerald-100 text-[#0B4628] border border-emerald-200 text-[10px] font-black uppercase tracking-wider rounded-full inline-block">
                           Current Fulfillment Status
                         </span>
-                        <h3 className="font-black text-gray-900 text-sm sm:text-base leading-snug">
+                        <h3 className="font-black text-[#0B4628] text-sm sm:text-base leading-snug">
                           {selectedOrder.tracking_number 
                             ? `In Transit with ${selectedOrder.tracking_carrier || 'Delhivery Express'}` 
                             : 'Packaging & Courier Dispatch Underway'}
