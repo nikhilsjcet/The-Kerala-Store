@@ -240,30 +240,37 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
               </div>
             </form>
 
-            {/* Expansive Hero Banner Card: Photorealistic, warm Kerala lifestyle artwork */}
-            <div className="relative rounded-3xl overflow-hidden shadow-2xs border border-[#E5DDD0] min-h-[220px] sm:min-h-[260px] lg:min-h-[290px] flex items-center">
-              {/* High-Resolution Studio Background Asset */}
-              <img
-                src="/mockup/orders-hero-parcel.jpg"
-                alt="The Kerala Store Order Tracking"
-                className="absolute inset-0 w-full h-full object-cover object-right sm:object-center select-none"
-              />
+            {/* Expansive Hero Banner Card: Deep Forest Green (#0B4628) with Crisp White Design & Seamless Foliage Blend */}
+            <div className="relative rounded-3xl overflow-hidden shadow-sm border-2 border-[#064024] bg-[#0B4628] text-white min-h-[220px] sm:min-h-[260px] lg:min-h-[280px] flex items-center">
+              
+              {/* Seamless Right-Aligned Foliage & Clean Unprinted Parcel Package (100% Text-Free Image) */}
+              <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[65%] lg:w-[55%] pointer-events-none overflow-hidden flex items-center justify-end">
+                <img
+                  src="/mockup/kerala-parcel-green-clean.jpg"
+                  alt="The Kerala Store Order Delivery"
+                  className="w-full h-full object-cover object-right select-none"
+                />
+                {/* Horizontal Gradient Mask: Seamlessly dissolves image into the solid green background on PC with zero hard cuts */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0B4628] via-[#0B4628]/70 sm:via-[#0B4628]/35 to-transparent pointer-events-none" />
+                {/* Vertical Edge Softening */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0B4628]/50 via-transparent to-[#0B4628]/40 pointer-events-none" />
+              </div>
 
-              {/* Soft Natural Light Gradient Mask for Crisp Typography Readability */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#FAF7F2] via-[#FAF7F2]/95 sm:via-[#FAF7F2]/85 to-transparent/20 z-0 pointer-events-none" />
+              {/* Left-Side Solid Gradient Backdrop to guarantee 100% crisp white text readability on all screen sizes */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0B4628] via-[#0B4628]/95 sm:via-[#0B4628]/85 to-transparent/10 z-0 pointer-events-none" />
 
-              {/* Text Content */}
+              {/* Text Content in Crisp White Design */}
               <div className="relative z-10 p-6 sm:p-8 lg:p-12 max-w-xl sm:max-w-2xl space-y-3 sm:space-y-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E2F3E9] text-[#0A5C36] text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-full border border-[#C6E7D2] shadow-2xs">
-                  <Sparkles className="w-3.5 h-3.5 text-[#0A5C36]" />
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/15 backdrop-blur-md text-emerald-100 text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-full border border-white/20 shadow-2xs">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
                   The Kerala Store
                 </span>
                 
-                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-[#111827] tracking-tight leading-tight">
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
                   Track My Orders
                 </h1>
                 
-                <p className="text-xs sm:text-base text-gray-700 font-medium max-w-lg leading-relaxed">
+                <p className="text-xs sm:text-base text-emerald-100/90 font-medium max-w-lg leading-relaxed">
                   View the real-time status of your orders, courier dispatch details, and doorstep delivery updates across India.
                 </p>
               </div>
@@ -471,18 +478,23 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                 </div>
               </div>
 
-              {/* TOP HERO CONFIRMATION BANNER: Deep Forest Green (#0B4628) with Photorealistic Green Foliage & Parcel */}
-              <div className="relative rounded-3xl overflow-hidden shadow-md border-2 border-[#064024] text-white min-h-[260px] sm:min-h-[300px] lg:min-h-[320px] flex flex-col justify-between p-6 sm:p-8 lg:p-12">
+              {/* TOP HERO CONFIRMATION BANNER: Deep Forest Green (#0B4628) with Seamless Foliage & Clean Parcel */}
+              <div className="relative rounded-3xl overflow-hidden shadow-md border-2 border-[#064024] bg-[#0B4628] text-white min-h-[260px] sm:min-h-[300px] lg:min-h-[320px] flex flex-col justify-between p-6 sm:p-8 lg:p-12">
                 
-                {/* High-Resolution Generated Forest Green Foliage & Parcel Background */}
-                <img
-                  src="/mockup/order-confirmed-green-parcel.jpg"
-                  alt="Order Confirmed - The Kerala Store"
-                  className="absolute inset-0 w-full h-full object-cover object-right sm:object-center select-none"
-                />
+                {/* Seamless Right-Aligned Foliage & Clean Unprinted Parcel Package (100% Text-Free Image) */}
+                <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[65%] lg:w-[55%] pointer-events-none overflow-hidden flex items-center justify-end">
+                  <img
+                    src="/mockup/kerala-parcel-green-clean.jpg"
+                    alt="Order Confirmed - The Kerala Store"
+                    className="w-full h-full object-cover object-right select-none"
+                  />
+                  {/* Seamless blending mask with zero cutting on PC */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#0B4628] via-[#0B4628]/70 sm:via-[#0B4628]/35 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B4628]/50 via-transparent to-[#0B4628]/40 pointer-events-none" />
+                </div>
 
-                {/* Deep Forest Green Gradient Overlay for Maximum Text Contrast */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#06301A] via-[#06301A]/95 sm:via-[#06301A]/80 to-transparent/30 z-0 pointer-events-none" />
+                {/* Left Gradient Overlay for Maximum Text Contrast */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0B4628] via-[#0B4628]/95 sm:via-[#0B4628]/85 to-transparent/20 z-0 pointer-events-none" />
 
                 {/* Content */}
                 <div className="relative z-10 max-w-2xl lg:max-w-3xl space-y-3 sm:space-y-4">
