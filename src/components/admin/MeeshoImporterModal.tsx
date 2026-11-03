@@ -690,7 +690,7 @@ export const MeeshoImporterModal: React.FC<MeeshoImporterModalProps> = ({
     } catch (err: any) {
       console.error(err);
       setIsImporting(false);
-      alert('Error importing product');
+      alert(`Error importing product: ${err?.message || 'Unknown error'}`);
     }
   };
 

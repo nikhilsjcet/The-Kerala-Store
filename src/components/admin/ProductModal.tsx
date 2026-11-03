@@ -189,9 +189,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       await onSave(dataToSave);
       setIsSaving(false);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setIsSaving(false);
+      alert(`Error saving product: ${err?.message || 'Please check all required fields and try again.'}`);
     }
   };
 

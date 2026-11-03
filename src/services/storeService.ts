@@ -362,7 +362,14 @@ export class StoreService {
                   c.id === p.category_id.replace(/^cat-/, '')
                 );
               }
-              return { ...p, category: cat };
+              const reviews = p.specifications?._customer_reviews || p.customer_reviews || [];
+              const deliveryFee = p.specifications?._delivery_charge ?? p.delivery_charge ?? 0;
+              return { 
+                ...p, 
+                category: cat,
+                customer_reviews: reviews,
+                delivery_charge: deliveryFee
+              };
             }) as Product[];
           }
         } catch (err) {
@@ -386,9 +393,17 @@ export class StoreService {
     });
 
     if (supabaseProducts.length > 0) {
-      // In production with Supabase, Supabase products are the source of truth.
-      // Do not resurrect stale seed data or unlisted mock items from local fallback.
-      return supabaseProducts;
+      // In production with Supabase, merge any newly added products from local cache that are not yet in Supabase
+      const merged = [...supabaseProducts];
+      const seenIds = new Set(supabaseProducts.map((p) => p.id));
+      const seenSlugs = new Set(supabaseProducts.map((p) => p.slug));
+
+      for (const lp of localProducts) {
+        if (!seenIds.has(lp.id) && !seenSlugs.has(lp.slug)) {
+          merged.push(lp);
+        }
+      }
+      return merged;
     }
 
     return localProducts;
@@ -495,30 +510,89 @@ export class StoreService {
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       if (client) {
-        // Strip nested virtual objects before inserting to Supabase
-        const { category, variants, ...supabaseRow } = prodToSave;
+        // Whitelist of valid Supabase product columns
+        const SUPABASE_PRODUCT_COLS = [
+          'title',
+          'slug',
+          'short_description',
+          'description',
+          'images',
+          'price',
+          'original_price',
+          'discount_percentage',
+          'category_id',
+          'tags',
+          'sku',
+          'stock_quantity',
+          'is_featured',
+          'is_trending',
+          'is_new_arrival',
+          'is_on_sale',
+          'status',
+          'supplier_id',
+          'supplier_name',
+          'supplier_cost',
+          'supplier_url',
+          'supplier_sku',
+          'processing_time_days',
+          'supplier_order_ref',
+          'rating',
+          'review_count',
+          'delivery_info',
+          'return_policy',
+          'seo_title',
+          'seo_description',
+        ];
+
+        // Store customer reviews and delivery charge inside JSONB specifications safely
+        const specsToSave = {
+          ...(prodToSave.specifications || {}),
+          _customer_reviews: prodToSave.customer_reviews || [],
+          _delivery_charge: prodToSave.delivery_charge || 0,
+        };
+
+        const supabaseRow: Record<string, any> = {
+          specifications: specsToSave,
+        };
+
+        for (const col of SUPABASE_PRODUCT_COLS) {
+          if ((prodToSave as any)[col] !== undefined) {
+            supabaseRow[col] = (prodToSave as any)[col];
+          }
+        }
 
         // Ensure category_id is a valid UUID or look up matching UUID
-        if (supabaseRow.category_id && !isValidUUID(supabaseRow.category_id)) {
+        let targetCatId = supabaseRow.category_id;
+        if (targetCatId && !isValidUUID(targetCatId)) {
           const matchedUuidCat = allCats.find(
             (c) =>
               isValidUUID(c.id) &&
-              (c.id === supabaseRow.category_id ||
-                c.slug === supabaseRow.category_id ||
-                c.slug === (supabaseRow.category_id || '').replace(/^cat-/, '') ||
-                c.name.toLowerCase() === (supabaseRow.category_id || '').toLowerCase())
+              (c.id === targetCatId ||
+                c.slug === targetCatId ||
+                c.slug === targetCatId.replace(/^cat-/, '') ||
+                c.name.toLowerCase() === targetCatId.toLowerCase())
           );
           if (matchedUuidCat) {
             supabaseRow.category_id = matchedUuidCat.id;
           } else {
-            delete (supabaseRow as any).category_id;
+            const defaultUuidCat = allCats.find((c) => isValidUUID(c.id));
+            if (defaultUuidCat) {
+              supabaseRow.category_id = defaultUuidCat.id;
+            } else {
+              delete supabaseRow.category_id;
+            }
           }
-        } else if (!supabaseRow.category_id) {
-          delete (supabaseRow as any).category_id;
+        } else if (!targetCatId) {
+          const defaultUuidCat = allCats.find((c) => isValidUUID(c.id));
+          if (defaultUuidCat) {
+            supabaseRow.category_id = defaultUuidCat.id;
+          } else {
+            delete supabaseRow.category_id;
+          }
         }
 
         if (isNew || !isValidUUID(prodToSave.id)) {
-          delete (supabaseRow as any).id;
+          delete supabaseRow.id;
           const { data, error } = await client
             .from('products')
             .insert(supabaseRow)
@@ -527,12 +601,25 @@ export class StoreService {
 
           if (error) {
             console.error('Supabase product insert error:', error);
+            throw new Error(`Failed to save product to database: ${error.message}`);
           } else if (data) {
             let cat = data.category;
             if (Array.isArray(cat)) cat = cat[0];
-            return { ...(data as Product), category: cat || matchedCategory };
+            const savedResult: Product = {
+              ...(data as Product),
+              category: cat || matchedCategory,
+              customer_reviews: data.specifications?._customer_reviews || prodToSave.customer_reviews || [],
+              delivery_charge: data.specifications?._delivery_charge ?? prodToSave.delivery_charge ?? 0,
+            };
+            const current = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+            setLocal(
+              STORAGE_KEYS.PRODUCTS,
+              [savedResult, ...current.filter((p) => p.id !== savedResult.id && p.slug !== savedResult.slug)]
+            );
+            return savedResult;
           }
         } else {
+          supabaseRow.updated_at = now;
           const { data, error } = await client
             .from('products')
             .update(supabaseRow)
@@ -542,10 +629,22 @@ export class StoreService {
 
           if (error) {
             console.error('Supabase product update error:', error);
+            throw new Error(`Failed to update product in database: ${error.message}`);
           } else if (data) {
             let cat = data.category;
             if (Array.isArray(cat)) cat = cat[0];
-            return { ...(data as Product), category: cat || matchedCategory };
+            const savedResult: Product = {
+              ...(data as Product),
+              category: cat || matchedCategory,
+              customer_reviews: data.specifications?._customer_reviews || prodToSave.customer_reviews || [],
+              delivery_charge: data.specifications?._delivery_charge ?? prodToSave.delivery_charge ?? 0,
+            };
+            const current = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+            setLocal(
+              STORAGE_KEYS.PRODUCTS,
+              current.map((p) => (p.id === savedResult.id ? savedResult : p))
+            );
+            return savedResult;
           }
         }
       }

@@ -146,7 +146,8 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const getStepStatus = (status: Order['fulfilment_status'], step: number) => {
+  const getStepStatus = (rawStatus: Order['fulfilment_status'], step: number) => {
+    const status = (rawStatus || 'pending').toLowerCase().trim();
     const statusMap: Record<string, number> = {
       pending: 1,
       processing: 2,
@@ -157,7 +158,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
     };
     const current = statusMap[status] || 1;
 
-    // When delivered, all 5 steps are completed and green-ticked
+    // When delivered or step 5 achieved, ALL 5 steps are completed and green-ticked
     if (status === 'delivered' || current >= 5) {
       return 'completed';
     }

@@ -843,6 +843,7 @@ Pincode: ${addr.pincode || ''}`;
     } catch (err: any) {
       console.error('Error saving product:', err);
       showNotification(`Error saving product: ${err?.message || 'Unknown error'}`);
+      throw err;
     }
   };
 
