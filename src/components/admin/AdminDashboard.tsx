@@ -54,7 +54,11 @@ import {
   Check,
   Instagram,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Bell,
+  BellRing,
+  X,
+  ArrowRight
 } from 'lucide-react';
 
 function getOrderDeliveryUpdateMessage(
@@ -584,6 +588,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [searchCustomer, setSearchCustomer] = useState('');
   const [searchOrder, setSearchOrder] = useState('');
+  const [orderPanelTab, setOrderPanelTab] = useState<'ongoing' | 'completed' | 'cancelled'>('ongoing');
+  const [dismissedNotificationBar, setDismissedNotificationBar] = useState(false);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const prevOrderCountRef = React.useRef<number | null>(null);
+
+  const playOrderChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch {
+      // Audio policy catch
+    }
+  };
+
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isMeeshoImporterOpen, setIsMeeshoImporterOpen] = useState(false);
@@ -759,6 +789,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
   }, [realOrders, searchOrder]);
 
+  // Categorize orders into Ongoing, Completed, and Cancelled panels
+  const ongoingAdminOrders = React.useMemo(() => {
+    return filteredOrders.filter(
+      (o) => o.fulfilment_status !== 'delivered' && o.fulfilment_status !== 'cancelled'
+    );
+  }, [filteredOrders]);
+
+  const completedAdminOrders = React.useMemo(() => {
+    return filteredOrders.filter((o) => o.fulfilment_status === 'delivered');
+  }, [filteredOrders]);
+
+  const cancelledAdminOrders = React.useMemo(() => {
+    return filteredOrders.filter((o) => o.fulfilment_status === 'cancelled');
+  }, [filteredOrders]);
+
+  // Pending new orders for admin notifications & alert bar
+  const newPendingOrders = React.useMemo(() => {
+    return realOrders.filter((o) => o.fulfilment_status === 'pending');
+  }, [realOrders]);
+
+  const latestNewOrder = newPendingOrders[0] || realOrders[0];
+
   const handleCopyAddressForMeesho = (ord: Order) => {
     const addr = ord.shipping_address || ({} as any);
     const text = `Name: ${ord.customer_name || addr.fullName || ''}
@@ -786,7 +838,15 @@ Pincode: ${addr.pincode || ''}`;
 
       if (prodsRes.status === 'fulfilled') setProducts(prodsRes.value);
       if (catsRes.status === 'fulfilled') setCategories(catsRes.value);
-      if (ordsRes.status === 'fulfilled') setOrders(ordsRes.value);
+      if (ordsRes.status === 'fulfilled') {
+        setOrders(ordsRes.value);
+        const real = ordsRes.value.filter(
+          (o) => !o.order_number?.startsWith('REG-') && o.notes !== 'REGISTERED_CUSTOMER_MEMBER'
+        );
+        if (prevOrderCountRef.current === null) {
+          prevOrderCountRef.current = real.length;
+        }
+      }
       if (supsRes.status === 'fulfilled') setSuppliers(supsRes.value);
       if (discsRes.status === 'fulfilled') setDiscounts(discsRes.value);
       if (custsRes.status === 'fulfilled') setRegisteredCustomers(custsRes.value);
@@ -804,6 +864,33 @@ Pincode: ${addr.pincode || ''}`;
 
   useEffect(() => {
     loadAllAdminData();
+  }, []);
+
+  // Background polling for new incoming orders every 20 seconds
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      try {
+        const freshOrders = await StoreService.getOrders();
+        const freshReal = freshOrders.filter(
+          (o) => !o.order_number?.startsWith('REG-') && o.notes !== 'REGISTERED_CUSTOMER_MEMBER'
+        );
+
+        if (prevOrderCountRef.current !== null && freshReal.length > prevOrderCountRef.current) {
+          const diff = freshReal.length - prevOrderCountRef.current;
+          playOrderChime();
+          setDismissedNotificationBar(false);
+          const newest = freshReal[0];
+          showNotification(`🔔 ${diff} New Order Received! #${newest?.order_number} from ${newest?.customer_name}`);
+        }
+
+        prevOrderCountRef.current = freshReal.length;
+        setOrders(freshOrders);
+      } catch {
+        // Continue silently
+      }
+    }, 20000);
+
+    return () => clearInterval(timer);
   }, []);
 
   const showNotification = (msg: string) => {
@@ -972,8 +1059,93 @@ Pincode: ${addr.pincode || ''}`;
           </div>
         </div>
 
-        {/* Right Actions: Supabase status & Lock Admin */}
+        {/* Right Actions: Notification Bell, Supabase status & Lock Admin */}
         <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+          
+          {/* Notification Bell Button with Dropdown Panel */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotificationsDropdown((prev) => !prev)}
+              className="relative p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer flex items-center justify-center"
+              title={`${newPendingOrders.length} new orders`}
+            >
+              <Bell className="w-4 h-4" />
+              {newPendingOrders.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-600 text-[10px] font-black text-white items-center justify-center shadow-xs">
+                    {newPendingOrders.length > 9 ? '9+' : newPendingOrders.length}
+                  </span>
+                </span>
+              )}
+            </button>
+
+            {/* Notifications Dropdown Panel */}
+            {showNotificationsDropdown && (
+              <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-gray-200 z-50 p-4 space-y-3 animate-in fade-in zoom-in-95">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-[#0A5C36]" />
+                    <h4 className="font-black text-xs sm:text-sm text-gray-900">
+                      New Orders ({newPendingOrders.length})
+                    </h4>
+                  </div>
+                  <button
+                    onClick={() => setShowNotificationsDropdown(false)}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
+                  {newPendingOrders.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-gray-400">
+                      <CheckCircle className="w-6 h-6 text-emerald-500 mx-auto mb-1.5" />
+                      All orders are processed and up to date!
+                    </div>
+                  ) : (
+                    newPendingOrders.slice(0, 6).map((ord) => (
+                      <div
+                        key={ord.id}
+                        onClick={() => {
+                          setActiveTab('orders');
+                          setOrderPanelTab('ongoing');
+                          setShowNotificationsDropdown(false);
+                        }}
+                        className="p-2.5 rounded-2xl bg-stone-50 hover:bg-emerald-50 border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-mono font-bold text-gray-900">{ord.order_number}</span>
+                          <span className="font-black text-[#0A5C36]">{formatINR(ord.total_amount)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-gray-500">
+                          <span className="font-medium text-gray-800 truncate max-w-[180px]">{ord.customer_name}</span>
+                          <span className="uppercase font-bold text-[10px] px-1.5 py-0.5 rounded-md bg-gray-200 text-gray-700">
+                            {ord.payment_method}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {newPendingOrders.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setActiveTab('orders');
+                      setOrderPanelTab('ongoing');
+                      setShowNotificationsDropdown(false);
+                    }}
+                    className="w-full py-2 bg-[#0A5C36] hover:bg-[#064024] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer text-center block shadow-xs"
+                  >
+                    Manage All Ongoing Orders ({newPendingOrders.length})
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={onOpenSupabaseModal}
             className={`px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border transition-all ${
@@ -997,6 +1169,59 @@ Pincode: ${addr.pincode || ''}`;
           </button>
         </div>
       </header>
+
+      {/* NOTIFICATION BAR FOR NEW ORDERS & LIVE ALERTS */}
+      {newPendingOrders.length > 0 && !dismissedNotificationBar && (
+        <div className="bg-gradient-to-r from-[#0A5C36] via-[#0E7A48] to-[#0A5C36] text-white px-4 sm:px-6 py-2.5 sm:py-3 shadow-md border-b border-emerald-600/40 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative shrink-0">
+              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center text-emerald-100">
+                <Bell className="w-4 h-4" />
+              </div>
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-400 text-[9px] font-black text-amber-950 items-center justify-center">
+                  {newPendingOrders.length}
+                </span>
+              </span>
+            </div>
+
+            <div className="text-xs sm:text-sm min-w-0">
+              <span className="font-black uppercase tracking-wider text-amber-300 mr-2 text-[11px] sm:text-xs">
+                New Orders Alert:
+              </span>
+              <span className="text-white font-medium">
+                You have <strong className="font-black text-amber-200 underline">{newPendingOrders.length} new order{newPendingOrders.length > 1 ? 's' : ''}</strong> awaiting dropship fulfillment!
+              </span>
+              {latestNewOrder && (
+                <span className="hidden lg:inline text-emerald-100 ml-2">
+                  (Latest: <strong className="font-mono text-white">{latestNewOrder.order_number}</strong> from <strong>{latestNewOrder.customer_name}</strong> • {formatINR(latestNewOrder.total_amount)})
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                setActiveTab('orders');
+                setOrderPanelTab('ongoing');
+              }}
+              className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <span>View Ongoing Orders</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setDismissedNotificationBar(true)}
+              className="p-1.5 hover:bg-white/20 rounded-xl text-emerald-200 hover:text-white transition-colors cursor-pointer"
+              title="Dismiss notification bar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Horizontal Scrolling Tabs Bar */}
       <div className="md:hidden bg-white border-b border-gray-200 px-3 py-2 overflow-x-auto flex items-center space-x-1.5 shrink-0 shadow-2xs">
@@ -1551,7 +1776,7 @@ Pincode: ${addr.pincode || ''}`;
                     Customer Orders &amp; Dropship Dispatch ({realOrders.length})
                   </h2>
                   <p className="text-xs text-gray-500">
-                    Copy customer addresses for Meesho, enter courier waybills, and update live tracking
+                    Process orders, update delivery tracking milestones &amp; copy customer addresses
                   </p>
                 </div>
 
@@ -1567,26 +1792,161 @@ Pincode: ${addr.pincode || ''}`;
                 </div>
               </div>
 
-              {/* Orders List */}
-              <div className="space-y-4">
-                {filteredOrders.length === 0 ? (
-                  <div className="bg-white p-12 text-center rounded-3xl border border-gray-200 text-xs text-gray-500">
-                    {orders.length === 0
-                      ? 'No orders placed yet. Test your store by adding a product to cart and checking out on the storefront!'
-                      : `No orders matching "${searchOrder}".`}
-                  </div>
-                ) : (
-                  filteredOrders.map((ord) => (
-                    <AdminOrderCard
-                      key={ord.id}
-                      order={ord}
-                      onUpdate={handleUpdateOrderStatus}
-                      onCopyAddress={handleCopyAddressForMeesho}
-                      onDelete={handleDeleteOrder}
-                    />
-                  ))
+              {/* 2 PANELS TOGGLE: ONGOING ORDERS vs COMPLETED ORDERS */}
+              <div className="flex items-center gap-2 border-b border-gray-200 pb-3 flex-wrap">
+                {/* Panel 1: Ongoing Orders */}
+                <button
+                  type="button"
+                  onClick={() => setOrderPanelTab('ongoing')}
+                  className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                    orderPanelTab === 'ongoing'
+                      ? 'bg-[#0A5C36] text-white shadow-sm'
+                      : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-200'
+                  }`}
+                >
+                  <Package className="w-4 h-4" />
+                  <span>Ongoing Orders</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black ${
+                    orderPanelTab === 'ongoing' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900'
+                  }`}>
+                    {ongoingAdminOrders.length}
+                  </span>
+                </button>
+
+                {/* Panel 2: Completed Orders */}
+                <button
+                  type="button"
+                  onClick={() => setOrderPanelTab('completed')}
+                  className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                    orderPanelTab === 'completed'
+                      ? 'bg-[#0A5C36] text-white shadow-sm'
+                      : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-200'
+                  }`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Completed Orders</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black ${
+                    orderPanelTab === 'completed' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-900'
+                  }`}>
+                    {completedAdminOrders.length}
+                  </span>
+                </button>
+
+                {/* Sub-Panel: Cancelled Orders */}
+                {cancelledAdminOrders.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setOrderPanelTab('cancelled')}
+                    className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ml-auto ${
+                      orderPanelTab === 'cancelled'
+                        ? 'bg-rose-700 text-white shadow-sm'
+                        : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'
+                    }`}
+                  >
+                    <span>Cancelled</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black ${
+                      orderPanelTab === 'cancelled' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-900'
+                    }`}>
+                      {cancelledAdminOrders.length}
+                    </span>
+                  </button>
                 )}
               </div>
+
+              {/* PANEL 1: ONGOING ORDERS */}
+              {orderPanelTab === 'ongoing' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-xs text-gray-500 px-1">
+                    <span>
+                      Active customer orders awaiting Meesho ordering, packing, courier waybill or out for delivery.
+                    </span>
+                    <span className="font-bold text-amber-700">
+                      {ongoingAdminOrders.length} Ongoing
+                    </span>
+                  </div>
+
+                  {ongoingAdminOrders.length === 0 ? (
+                    <div className="bg-white p-12 text-center rounded-3xl border border-gray-200 text-xs text-gray-500 space-y-2">
+                      <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto" />
+                      <p className="font-bold text-gray-800 text-sm">All Ongoing Orders Fulfilled!</p>
+                      <p>You have no active shipments waiting for dispatch. Check the Completed Orders panel for delivered packages.</p>
+                    </div>
+                  ) : (
+                    ongoingAdminOrders.map((ord) => (
+                      <AdminOrderCard
+                        key={ord.id}
+                        order={ord}
+                        onUpdate={handleUpdateOrderStatus}
+                        onCopyAddress={handleCopyAddressForMeesho}
+                        onDelete={handleDeleteOrder}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* PANEL 2: COMPLETED ORDERS */}
+              {orderPanelTab === 'completed' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-xs text-gray-500 px-1">
+                    <span>
+                      Customer orders safely delivered to doorsteps across India.
+                    </span>
+                    <span className="font-bold text-emerald-700">
+                      {completedAdminOrders.length} Completed
+                    </span>
+                  </div>
+
+                  {completedAdminOrders.length === 0 ? (
+                    <div className="bg-white p-12 text-center rounded-3xl border border-gray-200 text-xs text-gray-500 space-y-2">
+                      <Truck className="w-10 h-10 text-gray-400 mx-auto" />
+                      <p className="font-bold text-gray-800 text-sm">No Completed Orders Yet</p>
+                      <p>Once you mark an order as Delivered, it will appear here in Completed Orders.</p>
+                    </div>
+                  ) : (
+                    completedAdminOrders.map((ord) => (
+                      <AdminOrderCard
+                        key={ord.id}
+                        order={ord}
+                        onUpdate={handleUpdateOrderStatus}
+                        onCopyAddress={handleCopyAddressForMeesho}
+                        onDelete={handleDeleteOrder}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* SUB-PANEL: CANCELLED ORDERS */}
+              {orderPanelTab === 'cancelled' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-xs text-gray-500 px-1">
+                    <span>
+                      Customer or admin cancelled orders with refund details and cancellation reasons.
+                    </span>
+                    <span className="font-bold text-rose-700">
+                      {cancelledAdminOrders.length} Cancelled
+                    </span>
+                  </div>
+
+                  {cancelledAdminOrders.length === 0 ? (
+                    <div className="bg-white p-12 text-center rounded-3xl border border-gray-200 text-xs text-gray-500">
+                      No cancelled orders.
+                    </div>
+                  ) : (
+                    cancelledAdminOrders.map((ord) => (
+                      <AdminOrderCard
+                        key={ord.id}
+                        order={ord}
+                        onUpdate={handleUpdateOrderStatus}
+                        onCopyAddress={handleCopyAddressForMeesho}
+                        onDelete={handleDeleteOrder}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
+
             </div>
           )}
 

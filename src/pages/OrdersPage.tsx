@@ -28,7 +28,8 @@ import {
   Layers,
   ArrowRight,
   X,
-  AlertCircle
+  AlertCircle,
+  Bell
 } from 'lucide-react';
 
 interface OrdersPageProps {
@@ -373,8 +374,30 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
               </div>
             </div>
 
-            {/* Empty State when no orders exist */}
-            {displayOrders.length === 0 ? (
+            {/* Active Order Notification Bar */}
+            {ongoingOrders.length > 0 && (
+              <div className="bg-gradient-to-r from-emerald-700 via-[#0A5C36] to-[#064024] text-white rounded-2xl p-3.5 sm:p-4 shadow-sm flex items-center justify-between gap-3 border border-emerald-600/40 animate-in fade-in">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <Bell className="w-4 h-4 text-emerald-200" />
+                  </div>
+                  <div className="text-xs sm:text-sm font-medium truncate">
+                    <span className="font-black uppercase tracking-wider text-emerald-300 mr-2">Order Update:</span>
+                    <span>Order <strong className="font-mono text-white">#{ongoingOrders[0].order_number}</strong> is <strong>{getStatusBadge(ongoingOrders[0].fulfilment_status).label}</strong>. Expected: <strong>{getExactDeliverySchedule(ongoingOrders[0].created_at)}</strong></span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleOpenOrderDetails(ongoingOrders[0])}
+                  className="px-3.5 py-1.5 bg-white text-[#0A5C36] font-extrabold text-xs rounded-xl shadow-xs hover:bg-emerald-50 transition-colors shrink-0 cursor-pointer"
+                >
+                  Live Track
+                </button>
+              </div>
+            )}
+
+            {/* Empty State when no orders placed in store */}
+            {orders.length === 0 ? (
               <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-gray-200/90 shadow-2xs max-w-md mx-auto space-y-4">
                 <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center text-gray-400 mx-auto">
                   <Package className="w-8 h-8" />
@@ -417,21 +440,21 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                 </div>
               </div>
             ) : (
-              /* ORDERS LIST: Expansive on PC, Clean on Mobile */
+              /* 2 PANELS: ONGOING ORDERS vs COMPLETED ORDERS */
               <div className="space-y-4 sm:space-y-6">
                 
-                {/* Header & Tabs */}
+                {/* Header & 2-Panel Switcher */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
                   <div>
                     <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">
                       Your Orders ({orders.length})
                     </h2>
                     <span className="text-xs font-semibold text-gray-500">
-                      Click any order to view real-time tracking, courier details &amp; doorstep schedule
+                      View real-time courier tracking milestones &amp; doorstep delivery schedules
                     </span>
                   </div>
 
-                  {/* 2 Tabs: Ongoing Orders vs Delivered Orders */}
+                  {/* 2 Panel Tabs: Ongoing Orders vs Completed Orders */}
                   <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl border border-stone-200/80 self-start sm:self-auto">
                     <button
                       type="button"
@@ -442,6 +465,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
+                      <Package className="w-3.5 h-3.5" />
                       <span>Ongoing Orders</span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black ${
                         orderTab === 'ongoing' ? 'bg-white/20 text-white' : 'bg-stone-200 text-gray-700'
@@ -459,7 +483,8 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
-                      <span>Delivered</span>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Completed Orders</span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black ${
                         orderTab === 'delivered' ? 'bg-white/20 text-white' : 'bg-stone-200 text-gray-700'
                       }`}>
@@ -469,7 +494,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                   </div>
                 </div>
 
-                {/* Empty State within Current Tab */}
+                {/* Empty State within Current Selected Panel */}
                 {displayOrders.length === 0 ? (
                   <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-gray-200/90 shadow-2xs max-w-md mx-auto space-y-4">
                     <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center text-[#0A5C36] mx-auto">
@@ -477,11 +502,11 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                     </div>
                     <div>
                       <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                        {orderTab === 'ongoing' ? 'No Ongoing Orders' : 'No Delivered Orders Yet'}
+                        {orderTab === 'ongoing' ? 'No Ongoing Orders' : 'No Completed Orders Yet'}
                       </h3>
                       <p className="text-xs sm:text-sm text-gray-500 mt-1">
                         {orderTab === 'ongoing' 
-                          ? 'You do not have any active shipments in transit right now. Check your Delivered tab or explore new items!' 
+                          ? 'You do not have any active shipments in transit right now. Check your Completed Orders panel or explore new items!' 
                           : 'Orders you place will appear here once delivered safely to your doorstep.'}
                       </p>
                     </div>
