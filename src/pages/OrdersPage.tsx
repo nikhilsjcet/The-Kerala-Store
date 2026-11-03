@@ -26,7 +26,9 @@ import {
   MessageCircle,
   Calendar,
   Layers,
-  ArrowRight
+  ArrowRight,
+  X,
+  AlertCircle
 } from 'lucide-react';
 
 interface OrdersPageProps {
@@ -42,6 +44,69 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
   const [isLoading, setIsLoading] = useState(true);
   const [isDetailsView, setIsDetailsView] = useState(false);
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
+  const [orderTab, setOrderTab] = useState<'ongoing' | 'delivered'>('ongoing');
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [cancelReason, setCancelReason] = useState('Ordered by mistake / duplicate order');
+  const [customReasonText, setCustomReasonText] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const getExactDeliverySchedule = (dateString?: string) => {
+    if (!dateString) return '5–8 business days';
+    try {
+      const d = new Date(dateString);
+      const minD = new Date(d.getTime() + 5 * 24 * 60 * 60 * 1000);
+      const maxD = new Date(d.getTime() + 8 * 24 * 60 * 60 * 1000);
+      const opts: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' };
+      return `${minD.toLocaleDateString('en-IN', opts)} – ${maxD.toLocaleDateString('en-IN', opts)}`;
+    } catch {
+      return '5–8 business days';
+    }
+  };
+
+  const handleOpenCancelModal = (order: Order, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setOrderToCancel(order);
+    setCancelReason('Ordered by mistake / duplicate order');
+    setCustomReasonText('');
+    setIsCancelModalOpen(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!orderToCancel) return;
+    setIsCancelling(true);
+    const finalReason = cancelReason === 'Other reason' && customReasonText.trim()
+      ? customReasonText.trim()
+      : cancelReason;
+
+    const refundNote = orderToCancel.payment_method === 'cod'
+      ? 'COD: No payment collected'
+      : `Prepaid Refund ₹${orderToCancel.total_amount} initiated to original source`;
+
+    const cancellationNotes = `${orderToCancel.notes ? orderToCancel.notes + ' | ' : ''}Customer Cancelled: ${finalReason} (${refundNote})`;
+
+    try {
+      const updated = await StoreService.updateOrderStatus(orderToCancel.id, {
+        fulfilment_status: 'cancelled',
+        payment_status: orderToCancel.payment_method === 'cod' ? 'failed' : 'refunded',
+        notes: cancellationNotes,
+      });
+
+      if (updated) {
+        setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+        if (selectedOrder?.id === updated.id) {
+          setSelectedOrder(updated);
+        }
+      }
+      setIsCancelling(false);
+      setIsCancelModalOpen(false);
+      setOrderToCancel(null);
+    } catch (err) {
+      console.error(err);
+      setIsCancelling(false);
+      alert('Failed to cancel order. Please contact support.');
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -211,6 +276,14 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
           title: 'Packed by Supplier',
           description: 'Verified, packed with care, and awaiting courier handover.'
         };
+      case 'cancelled':
+        return {
+          label: 'Cancelled',
+          pillColor: 'bg-rose-50 text-rose-800 border-rose-300',
+          dotColor: 'bg-rose-600',
+          title: 'Order Cancelled',
+          description: 'This order was cancelled. Any prepaid payments are refunded to the source account.'
+        };
       case 'pending':
       default:
         return {
@@ -223,7 +296,9 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
     }
   };
 
-  const displayOrders = orders;
+  const ongoingOrders = orders.filter((o) => o.fulfilment_status !== 'delivered');
+  const deliveredOrders = orders.filter((o) => o.fulfilment_status === 'delivered');
+  const displayOrders = orderTab === 'ongoing' ? ongoingOrders : deliveredOrders;
 
   return (
     <div className="min-h-screen bg-[#FBFBFA] py-6 sm:py-10 lg:py-14">
@@ -344,112 +419,205 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
             ) : (
               /* ORDERS LIST: Expansive on PC, Clean on Mobile */
               <div className="space-y-4 sm:space-y-6">
-                <div className="flex items-center justify-between px-1">
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">
-                    Your Orders ({displayOrders.length})
-                  </h2>
-                  <span className="text-xs font-semibold text-gray-500 hidden sm:inline">
-                    Click any order to view full tracking and doorstep delivery status
-                  </span>
+                
+                {/* Header & Tabs */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">
+                      Your Orders ({orders.length})
+                    </h2>
+                    <span className="text-xs font-semibold text-gray-500">
+                      Click any order to view real-time tracking, courier details &amp; doorstep schedule
+                    </span>
+                  </div>
+
+                  {/* 2 Tabs: Ongoing Orders vs Delivered Orders */}
+                  <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl border border-stone-200/80 self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setOrderTab('ongoing')}
+                      className={`py-2 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                        orderTab === 'ongoing'
+                          ? 'bg-[#0A5C36] text-white shadow-xs'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <span>Ongoing Orders</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black ${
+                        orderTab === 'ongoing' ? 'bg-white/20 text-white' : 'bg-stone-200 text-gray-700'
+                      }`}>
+                        {ongoingOrders.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setOrderTab('delivered')}
+                      className={`py-2 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                        orderTab === 'delivered'
+                          ? 'bg-[#0A5C36] text-white shadow-xs'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <span>Delivered</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black ${
+                        orderTab === 'delivered' ? 'bg-white/20 text-white' : 'bg-stone-200 text-gray-700'
+                      }`}>
+                        {deliveredOrders.length}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
-                  {displayOrders.map((ord) => {
-                    const badge = getStatusBadge(ord.fulfilment_status);
-                    const firstItem = ord.items?.[0];
-                    const totalItemsCount = ord.items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
+                {/* Empty State within Current Tab */}
+                {displayOrders.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-gray-200/90 shadow-2xs max-w-md mx-auto space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center text-[#0A5C36] mx-auto">
+                      <Package className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                        {orderTab === 'ongoing' ? 'No Ongoing Orders' : 'No Delivered Orders Yet'}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                        {orderTab === 'ongoing' 
+                          ? 'You do not have any active shipments in transit right now. Check your Delivered tab or explore new items!' 
+                          : 'Orders you place will appear here once delivered safely to your doorstep.'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => onNavigate('shop')}
+                      className="px-6 py-2.5 rounded-full bg-[#0A5C36] text-white font-bold text-xs sm:text-sm shadow-sm hover:bg-[#064024] cursor-pointer"
+                    >
+                      Start Shopping
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {displayOrders.map((ord) => {
+                      const badge = getStatusBadge(ord.fulfilment_status);
+                      const firstItem = ord.items?.[0];
+                      const totalItemsCount = ord.items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
+                      const isCancellable = ord.fulfilment_status !== 'delivered' && ord.fulfilment_status !== 'cancelled';
 
-                    return (
-                      <div
-                        key={ord.id}
-                        onClick={() => handleOpenOrderDetails(ord)}
-                        className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs hover:shadow-md hover:border-[#0A5C36]/50 transition-all cursor-pointer p-3.5 sm:p-6 lg:p-7 space-y-3 sm:space-y-4 group overflow-hidden max-w-full"
-                      >
-                        {/* Top Row: Thumbnail, Product Info, Price, Chevron */}
-                        <div className="flex items-start gap-3 sm:gap-5 min-w-0">
-                          {/* Responsive Thumbnail */}
-                          <div className="w-16 h-20 sm:w-22 sm:h-24 lg:w-28 lg:h-28 rounded-2xl bg-[#F5F5F3] border border-gray-100 p-1 shrink-0 overflow-hidden group-hover:scale-102 transition-transform">
-                            <img
-                              src={firstItem?.product_image || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=400&q=80'}
-                              alt={firstItem?.product_title || 'The Kerala Store Product'}
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-
-                          {/* Content */}
-                          <div className="flex-1 min-w-0 space-y-1.5">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1">
-                                <h3 className="font-extrabold text-gray-900 text-sm sm:text-base lg:text-lg leading-snug group-hover:text-[#0A5C36] transition-colors line-clamp-2 break-words">
-                                  {firstItem?.product_title || 'Curated Product'}
-                                  {(ord.items?.length || 0) > 1 && (
-                                    <span className="text-xs font-semibold text-gray-500 ml-1.5 whitespace-nowrap">
-                                      +{ord.items!.length - 1} more
-                                    </span>
-                                  )}
-                                </h3>
-                                <p className="text-xs text-gray-500 font-medium mt-0.5">
-                                  Qty: <strong className="text-gray-800">{totalItemsCount}</strong>
-                                </p>
-                              </div>
-
-                              <div className="text-right shrink-0 flex items-center gap-1.5 pl-1">
-                                <span className="font-black text-gray-900 text-base sm:text-xl lg:text-2xl whitespace-nowrap">
-                                  {formatINR(ord.total_amount)}
-                                </span>
-                                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-[#0A5C36] group-hover:translate-x-0.5 transition-all shrink-0" />
-                              </div>
+                      return (
+                        <div
+                          key={ord.id}
+                          onClick={() => handleOpenOrderDetails(ord)}
+                          className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs hover:shadow-md hover:border-[#0A5C36]/50 transition-all cursor-pointer p-3.5 sm:p-6 lg:p-7 space-y-3 sm:space-y-4 group overflow-hidden max-w-full"
+                        >
+                          {/* Top Row: Thumbnail, Product Info, Price, Chevron */}
+                          <div className="flex items-start gap-3 sm:gap-5 min-w-0">
+                            {/* Responsive Thumbnail */}
+                            <div className="w-16 h-20 sm:w-22 sm:h-24 lg:w-28 lg:h-28 rounded-2xl bg-[#F5F5F3] border border-gray-100 p-1 shrink-0 overflow-hidden group-hover:scale-102 transition-transform">
+                              <img
+                                src={firstItem?.product_image || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=400&q=80'}
+                                alt={firstItem?.product_title || 'The Kerala Store Product'}
+                                className="w-full h-full object-contain"
+                              />
                             </div>
 
-                            {/* Badges Row: Order ID pill and Status pill without text cropping */}
-                            <div className="flex items-center gap-2 flex-wrap pt-1">
-                              {/* Order ID Pill with Copy button */}
-                              <button
-                                type="button"
-                                onClick={(e) => handleCopyOrderId(ord.order_number, e)}
-                                title="Click to copy Order ID"
-                                className="inline-flex items-center gap-1.5 bg-[#F3F4F6] hover:bg-[#E5E7EB] text-gray-800 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-mono font-semibold border border-gray-200/90 transition-colors max-w-full"
-                              >
-                                <FileText className="w-3 h-3 text-gray-500 shrink-0" />
-                                <span className="truncate">Order ID: {ord.order_number}</span>
-                                {copiedOrderId === ord.order_number ? (
-                                  <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                                ) : (
-                                  <Copy className="w-3 h-3 text-gray-400 hover:text-gray-700 shrink-0" />
-                                )}
-                              </button>
+                            {/* Content */}
+                            <div className="flex-1 min-w-0 space-y-1.5">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="font-extrabold text-gray-900 text-sm sm:text-base lg:text-lg leading-snug group-hover:text-[#0A5C36] transition-colors line-clamp-2 break-words">
+                                    {firstItem?.product_title || 'Curated Product'}
+                                    {(ord.items?.length || 0) > 1 && (
+                                      <span className="text-xs font-semibold text-gray-500 ml-1.5 whitespace-nowrap">
+                                        +{ord.items!.length - 1} more
+                                      </span>
+                                    )}
+                                  </h3>
+                                  <p className="text-xs text-gray-500 font-medium mt-0.5">
+                                    Qty: <strong className="text-gray-800">{totalItemsCount}</strong>
+                                  </p>
+                                </div>
 
-                              {/* Status Badge Pill */}
-                              <span className={`inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 rounded-full border ${badge.pillColor}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${badge.dotColor}`} />
-                                <span>{badge.label}</span>
+                                <div className="text-right shrink-0 flex items-center gap-1.5 pl-1">
+                                  <span className="font-black text-gray-900 text-base sm:text-xl lg:text-2xl whitespace-nowrap">
+                                    {formatINR(ord.total_amount)}
+                                  </span>
+                                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-[#0A5C36] group-hover:translate-x-0.5 transition-all shrink-0" />
+                                </div>
+                              </div>
+
+                              {/* Badges Row: Order ID pill and Status pill without text cropping */}
+                              <div className="flex items-center gap-2 flex-wrap pt-1">
+                                {/* Order ID Pill with Copy button */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleCopyOrderId(ord.order_number, e)}
+                                  title="Click to copy Order ID"
+                                  className="inline-flex items-center gap-1.5 bg-[#F3F4F6] hover:bg-[#E5E7EB] text-gray-800 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-mono font-semibold border border-gray-200/90 transition-colors max-w-full"
+                                >
+                                  <FileText className="w-3 h-3 text-gray-500 shrink-0" />
+                                  <span className="truncate">Order ID: {ord.order_number}</span>
+                                  {copiedOrderId === ord.order_number ? (
+                                    <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                                  ) : (
+                                    <Copy className="w-3 h-3 text-gray-400 hover:text-gray-700 shrink-0" />
+                                  )}
+                                </button>
+
+                                {/* Status Badge Pill */}
+                                <span className={`inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 rounded-full border ${badge.pillColor}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${badge.dotColor}`} />
+                                  <span>{badge.label}</span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Expected Delivery Date Schedule Bar */}
+                          <div className="flex items-center justify-between gap-2 text-xs bg-emerald-50/70 border border-emerald-200/60 rounded-xl px-3 py-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 text-emerald-900">
+                              <Calendar className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                              <span>
+                                {ord.fulfilment_status === 'delivered'
+                                  ? 'Delivered safely to doorstep'
+                                  : ord.fulfilment_status === 'cancelled'
+                                  ? 'Order cancelled'
+                                  : <>Expected Delivery: <strong>{getExactDeliverySchedule(ord.created_at)}</strong></>}
                               </span>
                             </div>
-                          </div>
-                        </div>
 
-                        {/* Status Update Box: Inside Card (Crisp White in Green Theme) */}
-                        <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-200/90 shadow-2xs flex items-start gap-3 sm:gap-4 ring-1 ring-emerald-500/10">
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-[#0A5C36] shrink-0 mt-0.5">
-                            <Package className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A5C36]" />
+                            {/* Cancel Order Action Button on Ongoing Order */}
+                            {isCancellable && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleOpenCancelModal(ord, e)}
+                                className="text-[11px] font-bold text-rose-700 hover:text-rose-900 hover:bg-rose-100/70 px-2.5 py-1 rounded-lg border border-rose-200 bg-white transition-colors inline-flex items-center gap-1 cursor-pointer"
+                              >
+                                <X className="w-3 h-3" />
+                                <span>Cancel Order</span>
+                              </button>
+                            )}
                           </div>
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <h4 className="font-extrabold text-[#0B4628] text-xs sm:text-sm lg:text-base">
-                              {badge.title}
-                            </h4>
-                            <p className="text-xs sm:text-sm text-gray-600 leading-snug">
-                              {badge.description}
-                            </p>
-                            <p className="text-[10px] sm:text-xs text-emerald-800/70 pt-0.5 font-medium">
-                              {formatCustomDate(ord.created_at)}
-                            </p>
-                          </div>
-                        </div>
 
-                      </div>
-                    );
-                  })}
-                </div>
+                          {/* Status Update Box: Inside Card (Crisp White in Green Theme) */}
+                          <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-200/90 shadow-2xs flex items-start gap-3 sm:gap-4 ring-1 ring-emerald-500/10">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-[#0A5C36] shrink-0 mt-0.5">
+                              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A5C36]" />
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <h4 className="font-extrabold text-[#0B4628] text-xs sm:text-sm lg:text-base">
+                                {badge.title}
+                              </h4>
+                              <p className="text-xs sm:text-sm text-gray-600 leading-snug">
+                                {badge.description}
+                              </p>
+                              <p className="text-[10px] sm:text-xs text-emerald-800/70 pt-0.5 font-medium">
+                                {formatCustomDate(ord.created_at)}
+                              </p>
+                            </div>
+                          </div>
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -683,6 +851,39 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                           );
                         })}
                       </div>
+                    </div>
+
+                    {/* DOORSTEP DELIVERY SCHEDULE & CANCELLATION BAR */}
+                    <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-[#0A5C36] shrink-0">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 block">
+                            Doorstep Delivery Schedule
+                          </span>
+                          <p className="text-xs sm:text-sm font-black text-[#0B4628]">
+                            {selectedOrder.fulfilment_status === 'delivered'
+                              ? 'Delivered Safely to Doorstep'
+                              : selectedOrder.fulfilment_status === 'cancelled'
+                              ? 'Order Cancelled'
+                              : `Expected Between: ${getExactDeliverySchedule(selectedOrder.created_at)}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Cancel Order Button in Order Details */}
+                      {selectedOrder.fulfilment_status !== 'delivered' && selectedOrder.fulfilment_status !== 'cancelled' && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCancelModal(selectedOrder)}
+                          className="px-4 py-2 text-xs font-bold text-rose-700 bg-white hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors cursor-pointer self-start sm:self-auto inline-flex items-center gap-1.5 shadow-2xs"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Cancel Order</span>
+                        </button>
+                      )}
                     </div>
 
                     {/* CURRENT STATUS UPDATE CARD: Crisp White in Green Theme */}
@@ -980,6 +1181,117 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
 
             </div>
           )
+        )}
+
+        {/* =================================================================== */}
+        {/* CANCEL ORDER MODAL (Customer Cancellation with Reason & Refund Info) */}
+        {/* =================================================================== */}
+        {isCancelModalOpen && orderToCancel && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-gray-100 space-y-5 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+              
+              <div className="flex items-start justify-between border-b border-gray-100 pb-3">
+                <div>
+                  <h3 className="text-lg font-black text-gray-900">Cancel Order</h3>
+                  <p className="text-xs text-gray-500 mt-0.5 font-mono">
+                    Order ID: {orderToCancel.order_number}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCancelModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Refund Policy Breakdown Card */}
+              <div className={`p-4 rounded-2xl border text-xs leading-relaxed space-y-1.5 ${
+                orderToCancel.payment_method === 'cod'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                  : 'bg-blue-50 border-blue-200 text-blue-900'
+              }`}>
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>
+                    {orderToCancel.payment_method === 'cod' ? 'Cash on Delivery Refund Policy' : 'Prepaid 100% Refund Policy'}
+                  </span>
+                </div>
+                <p>
+                  {orderToCancel.payment_method === 'cod' ? (
+                    <>
+                      Since this order is set to <strong>Cash on Delivery (₹0 collected)</strong>, no amount was charged to you. The order will be cancelled immediately with zero cancellation fee.
+                    </>
+                  ) : (
+                    <>
+                      Full payment of <strong>{formatINR(orderToCancel.total_amount)}</strong> will be refunded <strong>100%</strong> to your original payment method via Razorpay within <strong>3–5 business days</strong>.
+                    </>
+                  )}
+                </p>
+              </div>
+
+              {/* Select Cancellation Reason */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-black uppercase tracking-wider text-gray-700 block">
+                  Please select reason for cancellation:
+                </label>
+                {[
+                  'Ordered by mistake / duplicate order',
+                  'Delivery time is longer than expected',
+                  'Found cheaper price elsewhere',
+                  'Need to change shipping address or phone',
+                  'Other reason'
+                ].map((reason) => (
+                  <label
+                    key={reason}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-stone-50 cursor-pointer text-xs sm:text-sm font-medium text-gray-800 transition-colors"
+                  >
+                    <input
+                      type="radio"
+                      name="cancelReason"
+                      value={reason}
+                      checked={cancelReason === reason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      className="w-4 h-4 text-[#0A5C36] focus:ring-[#0A5C36]"
+                    />
+                    <span>{reason}</span>
+                  </label>
+                ))}
+
+                {cancelReason === 'Other reason' && (
+                  <textarea
+                    placeholder="Please specify your reason..."
+                    value={customReasonText}
+                    onChange={(e) => setCustomReasonText(e.target.value)}
+                    rows={2}
+                    className="w-full p-3 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A5C36]/30 mt-2"
+                  />
+                )}
+              </div>
+
+              {/* Modal Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCancelModalOpen(false)}
+                  disabled={isCancelling}
+                  className="px-5 py-2.5 rounded-full border border-gray-200 hover:bg-stone-100 text-xs sm:text-sm font-bold text-gray-700 transition-colors cursor-pointer"
+                >
+                  Keep Order
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmCancel}
+                  disabled={isCancelling}
+                  className="px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+                </button>
+              </div>
+
+            </div>
+          </div>
         )}
 
       </div>

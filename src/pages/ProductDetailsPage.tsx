@@ -141,31 +141,19 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
     // Live delivery region analysis for Indian pin codes
     const prefix = clean.substring(0, 2);
     let region = 'Pan-India Delivery';
-    let days = 4;
 
     if (prefix === '67' || prefix === '68' || prefix === '69') {
       region = 'Kerala (Express Local Courier)';
-      days = 2; // Fast 2-day delivery across Kerala
     } else if (clean.startsWith('5')) {
       region = 'South India (Karnataka, Tamil Nadu, Andhra)';
-      days = 3;
     } else if (clean.startsWith('4') || clean.startsWith('3')) {
       region = 'Western India (Maharashtra, Gujarat)';
-      days = 4;
     } else {
       region = 'North & East India';
-      days = 4;
     }
 
-    const targetDate = new Date(Date.now() + 86400000 * days);
-    const dateFormatted = targetDate.toLocaleDateString('en-IN', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-    });
-
     setPincodeMessage(
-      `✅ Delivery available to PIN ${clean} (${region}) by ${dateFormatted}.\n🚚 Free Doorstep Delivery • 💵 Cash on Delivery Available • 📦 Direct Dispatch from Supplier Warehouse`
+      `✅ Delivery available to PIN ${clean} (${region}). Approximate delivery: 5–8 business days.\n📅 The exact delivery date and live courier waybill will be confirmed after your order is placed.\n🚚 Free Doorstep Delivery • 💵 Cash on Delivery Available`
     );
   };
 
@@ -411,8 +399,11 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                     Check Delivery
                   </button>
                 </form>
+                <p className="mt-2 text-[11px] text-gray-500 font-medium">
+                  Approx. <strong>5–8 business days</strong> delivery across India. Exact delivery date is confirmed upon order placement.
+                </p>
                 {pincodeMessage && (
-                  <p className="mt-2 text-xs font-medium text-emerald-800 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                  <p className="mt-2 text-xs font-medium text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 whitespace-pre-line leading-relaxed">
                     {pincodeMessage}
                   </p>
                 )}

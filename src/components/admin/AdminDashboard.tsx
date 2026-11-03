@@ -134,9 +134,10 @@ interface AdminOrderCardProps {
     supplierRef?: string
   ) => Promise<void>;
   onCopyAddress: (order: Order) => void;
+  onDelete: (orderId: string, orderNumber: string) => Promise<void>;
 }
 
-const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopyAddress }) => {
+const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopyAddress, onDelete }) => {
   const [status, setStatus] = useState<FulfilmentStatus>(order.fulfilment_status);
   const [carrier, setCarrier] = useState(order.tracking_carrier || 'Delhivery');
   const [customCarrier, setCustomCarrier] = useState(
@@ -226,7 +227,7 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <span className="text-xs text-emerald-100 font-medium">
             {formatDateTime(order.created_at)}
           </span>
@@ -235,6 +236,14 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
               {formatINR(order.total_amount)}
             </span>
           </div>
+          <button
+            type="button"
+            onClick={() => onDelete(order.id, order.order_number)}
+            className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors cursor-pointer"
+            title="Permanently delete order"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
@@ -502,6 +511,16 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
                   <Instagram className="w-3.5 h-3.5" />
                   <span>Insta Support</span>
                 </a>
+
+                <button
+                  type="button"
+                  onClick={() => onDelete(order.id, order.order_number)}
+                  className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors cursor-pointer"
+                  title="Permanently delete this order from store database"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Order</span>
+                </button>
 
                 <button
                   type="button"
@@ -867,6 +886,20 @@ Pincode: ${addr.pincode || ''}`;
     } catch (err: any) {
       console.error('Error updating order:', err);
       showNotification(`Error updating order: ${err?.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string, orderNumber: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete order ${orderNumber}? This will remove it from both Supabase and your store records.`)) {
+      return;
+    }
+    try {
+      await StoreService.deleteOrder(orderId);
+      showNotification(`Order ${orderNumber} has been permanently deleted.`);
+      await loadAllAdminData();
+    } catch (err: any) {
+      console.error('Error deleting order:', err);
+      showNotification(`Failed to delete order: ${err?.message || 'Unknown error'}`);
     }
   };
 
@@ -1549,6 +1582,7 @@ Pincode: ${addr.pincode || ''}`;
                       order={ord}
                       onUpdate={handleUpdateOrderStatus}
                       onCopyAddress={handleCopyAddressForMeesho}
+                      onDelete={handleDeleteOrder}
                     />
                   ))
                 )}

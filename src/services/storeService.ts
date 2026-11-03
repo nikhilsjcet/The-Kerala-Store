@@ -341,7 +341,6 @@ export class StoreService {
 
   static async getAllAdminProducts(): Promise<Product[]> {
     const allCats = await this.getAllCategories();
-    let supabaseProducts: Product[] = [];
 
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
@@ -350,8 +349,10 @@ export class StoreService {
           const { data, error } = await client
             .from('products')
             .select('*, category:categories(*)');
-          if (!error && data && data.length > 0) {
-            supabaseProducts = data.map((p: any) => {
+          if (!error && data) {
+            // When Supabase is configured, Supabase is the sole source of truth for products.
+            // Never resurrect seed/dummy mock items into the live catalog.
+            return data.map((p: any) => {
               let cat = p.category;
               if (Array.isArray(cat)) cat = cat[0];
               if (!cat && p.category_id) {
@@ -378,8 +379,8 @@ export class StoreService {
       }
     }
 
-    // Fallback & local items
-    const localProducts = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS).map((p) => {
+    // Fallback for offline / unconfigured mock mode only
+    const localProducts = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, []).map((p) => {
       let cat = p.category;
       if (!cat && p.category_id) {
         cat = allCats.find((c) =>
@@ -391,20 +392,6 @@ export class StoreService {
       }
       return { ...p, category: cat };
     });
-
-    if (supabaseProducts.length > 0) {
-      // In production with Supabase, merge any newly added products from local cache that are not yet in Supabase
-      const merged = [...supabaseProducts];
-      const seenIds = new Set(supabaseProducts.map((p) => p.id));
-      const seenSlugs = new Set(supabaseProducts.map((p) => p.slug));
-
-      for (const lp of localProducts) {
-        if (!seenIds.has(lp.id) && !seenSlugs.has(lp.slug)) {
-          merged.push(lp);
-        }
-      }
-      return merged;
-    }
 
     return localProducts;
   }
@@ -1032,6 +1019,7 @@ export class StoreService {
       tracking_number?: string;
       tracking_carrier?: string;
       supplier_order_ref?: string;
+      notes?: string;
     }
   ): Promise<Order | null> {
     const now = new Date().toISOString();
@@ -1068,6 +1056,36 @@ export class StoreService {
     setLocal(STORAGE_KEYS.ORDERS, updatedLocal);
 
     return updatedOrder;
+  }
+
+  static async deleteOrder(orderId: string): Promise<boolean> {
+    if (isSupabaseConfigured()) {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          if (isValidUUID(orderId)) {
+            // Delete order items first to satisfy foreign key constraints
+            await client.from('order_items').delete().eq('order_id', orderId);
+            await client.from('orders').delete().eq('id', orderId);
+          } else {
+            // Find by order_number
+            const { data } = await client.from('orders').select('id').eq('order_number', orderId).maybeSingle();
+            if (data?.id) {
+              await client.from('order_items').delete().eq('order_id', data.id);
+            }
+            await client.from('orders').delete().eq('order_number', orderId);
+          }
+        } catch (err) {
+          console.warn('Supabase deleteOrder error:', err);
+        }
+      }
+    }
+
+    const currentLocal = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
+    const updatedLocal = currentLocal.filter((o) => o.id !== orderId && o.order_number !== orderId);
+    setLocal(STORAGE_KEYS.ORDERS, updatedLocal);
+
+    return true;
   }
 
   // --- ANALYTICS ---
