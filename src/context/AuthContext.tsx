@@ -32,6 +32,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY_USER = 'thekeralastore_current_user';
+export const STORAGE_KEY_ADMIN_SESSION = 'thekeralastore_admin_session';
 
 export const MASTER_ADMIN_PASSCODE = 'kinnan123';
 
@@ -48,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<UserProfile | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
+      const isAdminSession = localStorage.getItem(STORAGE_KEY_ADMIN_SESSION) === 'true';
       const saved = localStorage.getItem(STORAGE_KEY_USER);
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -61,8 +63,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem(STORAGE_KEY_USER);
           return null;
         }
+
+        if (parsed?.role === 'admin' || isAdminSession) {
+          return {
+            ...DEFAULT_ADMIN,
+            ...parsed,
+            role: 'admin',
+          };
+        }
+
         return parsed;
       }
+
+      if (isAdminSession) {
+        return DEFAULT_ADMIN;
+      }
+
       return null;
     } catch {
       return null;
@@ -78,6 +94,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const openOtpModal = () => setIsOtpModalOpen(true);
   const closeOtpModal = () => setIsOtpModalOpen(false);
+
+  // Helper to check if current tab/session is an active Admin session
+  const checkIsAdminActive = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    return (
+      localStorage.getItem(STORAGE_KEY_ADMIN_SESSION) === 'true' ||
+      user?.role === 'admin' ||
+      window.location.pathname.toLowerCase().includes('/nikhil')
+    );
+  };
 
   // 1. Google OAuth Sign-In (Primary customer authentication)
   const signInWithGoogle = async (): Promise<{ error?: any; data?: any }> => {
@@ -114,6 +140,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: '+91 98460 12345',
         created_at: new Date().toISOString(),
       };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY_ADMIN_SESSION, 'true');
+        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(adminProfile));
+      }
       setUser(adminProfile);
       return true;
     }
@@ -125,11 +155,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) {
       try {
         localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+        if (user.role === 'admin') {
+          localStorage.setItem(STORAGE_KEY_ADMIN_SESSION, 'true');
+        }
       } catch (e) {
         console.error(e);
       }
     } else {
-      localStorage.removeItem(STORAGE_KEY_USER);
+      const isAdminSession = typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY_ADMIN_SESSION) === 'true';
+      if (!isAdminSession) {
+        localStorage.removeItem(STORAGE_KEY_USER);
+      }
+    }
+  }, [user]);
+
+  // Keep user state in sync if admin session exists in localStorage
+  useEffect(() => {
+    if (!user && typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY_ADMIN_SESSION) === 'true') {
+      setUser(DEFAULT_ADMIN);
     }
   }, [user]);
 
@@ -141,6 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Initial session check (e.g. on return from OAuth redirect)
         client.auth.getSession().then(({ data: { session }, error }) => {
           if (!error && session?.user) {
+            const isAdminActive = checkIsAdminActive();
             const meta = session.user.user_metadata || {};
             const resolvedName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Customer';
             const profile: UserProfile = {
@@ -151,6 +195,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               role: meta.role === 'admin' ? 'admin' : 'customer',
               created_at: session.user.created_at,
             };
+
+            // Don't downgrade active store administrator to customer
+            if (isAdminActive && profile.role !== 'admin') {
+              if (profile.email) {
+                StoreService.saveRegisteredCustomer({
+                  id: session.user.id,
+                  email: session.user.email,
+                  full_name: resolvedName,
+                  phone: meta.phone || session.user.phone || '',
+                  avatar_url: meta.avatar_url || meta.picture || '',
+                  created_at: session.user.created_at,
+                  source: 'google',
+                }).catch(() => {});
+              }
+              return;
+            }
+
             setUser(profile);
             closeAuthModal();
 
@@ -176,6 +237,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Real-time auth state subscription
         const { data: authListener } = client.auth.onAuthStateChange((event, session) => {
+          const isAdminActive = checkIsAdminActive();
+
           if (event === 'SIGNED_IN' && session?.user) {
             const meta = session.user.user_metadata || {};
             const resolvedName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Customer';
@@ -187,6 +250,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               role: meta.role === 'admin' ? 'admin' : 'customer',
               created_at: session.user.created_at,
             };
+
+            // If an Admin is currently active, do not demote their session to customer
+            if (isAdminActive && profile.role !== 'admin') {
+              if (profile.email) {
+                StoreService.saveRegisteredCustomer({
+                  id: session.user.id,
+                  email: session.user.email,
+                  full_name: resolvedName,
+                  phone: meta.phone || session.user.phone || '',
+                  avatar_url: meta.avatar_url || meta.picture || '',
+                  created_at: session.user.created_at,
+                  source: 'google',
+                }).catch(() => {});
+              }
+              return;
+            }
+
             setUser(profile);
             closeAuthModal();
 
@@ -207,6 +287,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               window.history.replaceState(null, '', window.location.pathname + window.location.search);
             }
           } else if (event === 'SIGNED_OUT') {
+            // CRITICAL FIX: When user changes tabs or minimizes browser, Supabase GoTrue runs
+            // internal _recoverAndRefresh() on visibilitychange and fires SIGNED_OUT if there is no OAuth token.
+            // NEVER log out an active Admin on background Supabase SIGNED_OUT events!
+            if (isAdminActive) {
+              return;
+            }
+
             setUser(null);
             try {
               localStorage.removeItem(STORAGE_KEY_USER);
@@ -225,21 +312,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 5. Sign Out
   const logout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY_ADMIN_SESSION);
+      sessionStorage.removeItem(STORAGE_KEY_ADMIN_SESSION);
+      localStorage.removeItem(STORAGE_KEY_USER);
+    }
     if (isSupabaseConfigured()) {
       const client = getSupabaseClient();
       client?.auth.signOut().catch(() => {});
     }
     setUser(null);
-    try {
-      localStorage.removeItem(STORAGE_KEY_USER);
-    } catch (e) {
-      console.error(e);
-    }
   };
 
   // Admin and testing convenience
-  const loginAsAdmin = () => setUser(DEFAULT_ADMIN);
+  const loginAsAdmin = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_ADMIN_SESSION, 'true');
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(DEFAULT_ADMIN));
+    }
+    setUser(DEFAULT_ADMIN);
+  };
+
   const loginAsCustomer = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY_ADMIN_SESSION);
+    }
     const cust: UserProfile = {
       id: `usr-${Date.now()}`,
       email: 'customer@thekeralastore.shop',
@@ -308,7 +405,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     closeOtpModal();
   };
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin =
+    user?.role === 'admin' ||
+    (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY_ADMIN_SESSION) === 'true');
 
   return (
     <AuthContext.Provider

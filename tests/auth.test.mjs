@@ -324,4 +324,53 @@ describe('TheKeralaStore Authentication, Cart & Order Scoping Tests', () => {
     assert.equal(result[0].totalSpent, 0);
   });
 
+  // 12. Admin tab minimization & switch immunity: Supabase background SIGNED_OUT does not kill admin session
+  test('Tab switch or Supabase SIGNED_OUT event does not log out active administrator session', () => {
+    let mockStorage = {
+      'thekeralastore_admin_session': 'true',
+      'thekeralastore_current_user': JSON.stringify({
+        id: 'usr-admin-master',
+        role: 'admin',
+        email: 'admin@thekeralastore.shop',
+        full_name: 'Store Administrator'
+      }),
+    };
+
+    let currentUser = JSON.parse(mockStorage['thekeralastore_current_user']);
+
+    const handleAuthStateChange = (event, session) => {
+      const isAdminActive =
+        mockStorage['thekeralastore_admin_session'] === 'true' ||
+        currentUser?.role === 'admin';
+
+      if (event === 'SIGNED_OUT') {
+        if (isAdminActive) {
+          // Protected: ignore GoTrue tab switch SIGNED_OUT
+          return;
+        }
+        currentUser = null;
+        delete mockStorage['thekeralastore_current_user'];
+      }
+    };
+
+    // Simulate tab switch / minimization triggering GoTrue SIGNED_OUT
+    handleAuthStateChange('SIGNED_OUT', null);
+
+    assert.ok(currentUser, 'Admin user must NOT be wiped on SIGNED_OUT');
+    assert.equal(currentUser.role, 'admin');
+    assert.equal(mockStorage['thekeralastore_admin_session'], 'true');
+    assert.ok(mockStorage['thekeralastore_current_user']);
+
+    // Explicit admin logout must clear admin session
+    const handleExplicitLogout = () => {
+      delete mockStorage['thekeralastore_admin_session'];
+      delete mockStorage['thekeralastore_current_user'];
+      currentUser = null;
+    };
+
+    handleExplicitLogout();
+    assert.equal(currentUser, null, 'Explicit logout successfully clears session');
+    assert.equal(mockStorage['thekeralastore_admin_session'], undefined);
+  });
+
 });

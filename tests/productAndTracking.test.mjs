@@ -133,3 +133,4 @@ test('Supabase Product Insertion Column Sanitization', async (t) => {
     assert.equal(supabaseRow.sku, 'TKS-FASH-001');
   });
 });
+
