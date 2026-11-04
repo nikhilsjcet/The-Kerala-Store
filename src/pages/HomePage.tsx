@@ -4,6 +4,7 @@ import { ShopByCategory } from '../components/storefront/ShopByCategory';
 import { TrustBadgesBar } from '../components/storefront/TrustBadgesBar';
 import { PromoCards } from '../components/storefront/PromoCards';
 import { ProductCard } from '../components/storefront/ProductCard';
+import { InstagramProductsSection } from '../components/storefront/InstagramProductsSection';
 import { StoreService } from '../services/storeService';
 import { Product } from '../types';
 import { 
@@ -11,7 +12,8 @@ import {
   Flame, 
   Sparkles, 
   CheckCircle, 
-  Clock 
+  Clock,
+  Instagram
 } from 'lucide-react';
 
 interface HomePageProps {
@@ -83,6 +85,28 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* 3. Trust Badges Row (Free Shipping, Secure Payments, Easy Returns, 24/7 Support, Quality Products) */}
       <TrustBadgesBar />
+
+      {/* Instagram Live Catalog Quick Banner */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-1">
+        <a
+          href="https://instagram.com/thekeralastore_"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-pink-200/80 hover:border-pink-300 flex items-center justify-between gap-3 text-xs sm:text-sm font-bold text-gray-800 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white shrink-0 shadow-2xs">
+              <Instagram className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </div>
+            <span className="truncate">
+              Want to see real unboxings &amp; live video drops? <strong className="text-pink-600 underline">Show All Products on Instagram (@thekeralastore_)</strong>
+            </span>
+          </div>
+          <span className="shrink-0 px-3 py-1 bg-white rounded-full text-pink-600 text-xs font-black border border-pink-200 group-hover:bg-pink-600 group-hover:text-white transition-all shadow-2xs">
+            Open Instagram ↗
+          </span>
+        </a>
+      </div>
 
       {/* 4. Best Sellers (Placed directly beneath Trust Badges matching mobile mockup) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
@@ -177,7 +201,10 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </section>
 
-      {/* 8. Newsletter VIP Signup */}
+      {/* 8. Dedicated Instagram Showcase Section (Show All Products on Instagram) */}
+      <InstagramProductsSection />
+
+      {/* 9. Newsletter VIP Signup */}
       <section className="bg-gradient-to-r from-[#0B4628] via-[#0E5C35] to-[#07301B] text-white py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="text-xs font-bold uppercase tracking-widest text-emerald-200">

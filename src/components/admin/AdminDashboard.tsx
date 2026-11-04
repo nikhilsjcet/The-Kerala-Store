@@ -155,6 +155,7 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedAlert, setCopiedAlert] = useState(false);
+  const [copiedPayId, setCopiedPayId] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
@@ -190,6 +191,22 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
   const trackingUrl = getCourierTrackingUrl(effectiveCarrier, trackingNumber);
   const addr = order.shipping_address || ({} as any);
 
+  const isCod = order.payment_method === 'cod';
+  const payId = order.payment_id || '';
+  const isLiveRazorpay = !isCod && payId.startsWith('pay_');
+  const isTestRazorpay = !isCod && payId.startsWith('rzp_test_');
+  const isSimulated = !isCod && (payId.startsWith('rzp_sim_') || payId.startsWith('sim_'));
+  const isMissingPayId = !isCod && !payId;
+
+  const handleCopyPaymentId = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (payId && navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(payId);
+      setCopiedPayId(true);
+      setTimeout(() => setCopiedPayId(false), 2000);
+    }
+  };
+
   return (
     <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs overflow-hidden transition-all hover:border-gray-300">
       {/* Top Green Banner with White Texts */}
@@ -197,9 +214,15 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
         <div className="flex items-center gap-2.5 flex-wrap">
           <span className="font-mono font-extrabold text-white text-sm sm:text-base">{order.order_number}</span>
           <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
-            order.payment_method === 'cod' ? 'bg-amber-300 text-amber-950 border-amber-300' : 'bg-white text-[#0A5C36] border-white'
+            isCod 
+              ? 'bg-amber-300 text-amber-950 border-amber-300' 
+              : isLiveRazorpay
+              ? 'bg-emerald-300 text-emerald-950 border-emerald-300'
+              : isTestRazorpay
+              ? 'bg-yellow-300 text-yellow-950 border-yellow-300'
+              : 'bg-rose-200 text-rose-950 border-rose-300'
           }`}>
-            {order.payment_method.toUpperCase()}
+            {isCod ? '💵 COD' : isLiveRazorpay ? '🟢 RAZORPAY LIVE' : isTestRazorpay ? '🟡 RZP TEST' : '🔴 UNVERIFIED'}
           </span>
 
           {/* Quick Delivery Status Dropdown for Admin */}
@@ -295,6 +318,50 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
         </div>
       </div>
 
+      {/* Front Payment Inspection Quick Strip */}
+      <div className="px-4 py-2.5 bg-stone-50 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2 flex-wrap">
+          <CreditCard className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+          <span className="font-bold text-gray-700">Payment:</span>
+          {isCod ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 font-semibold text-[11px]">
+              <span>💵 Cash on Delivery</span>
+              <span className="text-gray-500 font-normal">• Collect {formatINR(order.total_amount)} at doorstep</span>
+            </span>
+          ) : isLiveRazorpay ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-900 border border-emerald-200 font-semibold text-[11px]">
+              <ShieldCheck className="w-3 h-3 text-emerald-600" />
+              <span>Razorpay Verified</span>
+              <span className="font-mono text-emerald-700 font-bold">({payId})</span>
+            </span>
+          ) : isTestRazorpay ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-50 text-yellow-900 border border-yellow-200 font-semibold text-[11px]">
+              <span>⚠️ Test Mode Payment</span>
+              <span className="font-mono text-yellow-700">({payId})</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-900 border border-rose-200 font-semibold text-[11px]">
+              <span>❌ Simulated / Not Captured</span>
+              {payId && <span className="font-mono text-rose-700">({payId})</span>}
+            </span>
+          )}
+        </div>
+
+        {/* Quick Razorpay Link if Razorpay order */}
+        {!isCod && payId && (
+          <a
+            href={`https://dashboard.razorpay.com/app/payments/${payId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1"
+            title="Inspect payment on official Razorpay Dashboard"
+          >
+            <span>Verify on Razorpay</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
+      </div>
+
       {/* Accordion Action Bar */}
       <div className="px-4 py-3 bg-stone-50/60 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs">
@@ -370,6 +437,103 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
                 {addr.city || 'Kottayam'}, {addr.state || 'Kerala'} - {addr.pincode || '686001'}
               </p>
             </div>
+          </div>
+
+          {/* Payment Gateway & Transaction Inspection Card */}
+          <div className="bg-[#FAFBFD] p-4 sm:p-5 rounded-2xl border border-blue-100 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 text-blue-600" /> Payment &amp; Gateway Transaction Details
+              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                  order.payment_status === 'completed'
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                    : order.payment_status === 'refunded'
+                    ? 'bg-purple-100 text-purple-800 border-purple-300'
+                    : order.payment_status === 'failed'
+                    ? 'bg-rose-100 text-rose-800 border-rose-300'
+                    : 'bg-amber-100 text-amber-800 border-amber-300'
+                }`}>
+                  Status: {order.payment_status || 'Pending'}
+                </span>
+                {!isCod && payId && (
+                  <a
+                    href={`https://dashboard.razorpay.com/app/payments/${payId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1 transition-colors shadow-2xs"
+                  >
+                    <span>Razorpay Dashboard</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="bg-white p-3 rounded-xl border border-gray-200 space-y-0.5">
+                <span className="text-[10px] uppercase font-bold text-gray-400 block">Payment Method</span>
+                <span className="font-extrabold text-gray-900 block">
+                  {isCod ? 'Cash on Delivery (COD)' : 'Razorpay Online Gateway'}
+                </span>
+                <span className="text-[10px] text-gray-500">
+                  {isCod ? 'Doorstep cash collection' : 'UPI, Cards, NetBanking'}
+                </span>
+              </div>
+
+              <div className="bg-white p-3 rounded-xl border border-gray-200 space-y-0.5">
+                <span className="text-[10px] uppercase font-bold text-gray-400 block">Order Total</span>
+                <span className="font-extrabold text-gray-900 text-sm block">
+                  {formatINR(order.total_amount)}
+                </span>
+                <span className="text-[10px] text-gray-500">Currency: INR</span>
+              </div>
+
+              <div className="bg-white p-3 rounded-xl border border-gray-200 space-y-0.5 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-gray-400 block">Transaction / Payment ID</span>
+                  {payId && (
+                    <button
+                      type="button"
+                      onClick={handleCopyPaymentId}
+                      className="text-[10px] text-blue-600 hover:underline inline-flex items-center gap-1 font-bold cursor-pointer"
+                    >
+                      {copiedPayId ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedPayId ? 'Copied' : 'Copy ID'}</span>
+                    </button>
+                  )}
+                </div>
+                <span className="font-mono font-bold text-gray-900 text-xs block truncate" title={payId || 'None'}>
+                  {payId || (isCod ? 'N/A (Doorstep Cash Collection)' : 'No Gateway Transaction ID')}
+                </span>
+                <div className="pt-0.5">
+                  {isCod ? (
+                    <span className="text-[10px] text-amber-700 font-semibold">
+                      Full amount {formatINR(order.total_amount)} to be received upon delivery.
+                    </span>
+                  ) : isLiveRazorpay ? (
+                    <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" /> Real funds captured via Razorpay Gateway.
+                    </span>
+                  ) : isTestRazorpay ? (
+                    <span className="text-[10px] text-yellow-700 font-semibold">
+                      ⚠️ Test Mode / Sandbox Payment. No real bank transfer.
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-rose-700 font-semibold">
+                      🔴 Simulated or unverified payment. Verify before shipping!
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {order.notes && (
+              <div className="text-[11px] bg-white p-2.5 rounded-xl border border-gray-200 text-gray-600">
+                <span className="font-bold text-gray-700">Notes / Audit Trail:</span> {order.notes}
+              </div>
+            )}
           </div>
 
           {/* Meesho Dropship Fulfillment Controls */}

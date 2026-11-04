@@ -621,18 +621,23 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                           </div>
 
                           {/* Status Update Box: Inside Card (Crisp White in Green Theme) */}
-                          <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-200/90 shadow-2xs flex items-start gap-3 sm:gap-4 ring-1 ring-emerald-500/10">
+                          <div className="bg-white rounded-2xl p-3.5 sm:p-4 border-l-4 border-l-[#0A5C36] border border-emerald-200/90 shadow-2xs flex items-start gap-3 sm:gap-4 ring-1 ring-emerald-500/10">
                             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-[#0A5C36] shrink-0 mt-0.5">
                               <Package className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A5C36]" />
                             </div>
                             <div className="flex-1 min-w-0 space-y-1">
-                              <h4 className="font-extrabold text-[#0B4628] text-xs sm:text-sm lg:text-base">
-                                {badge.title}
-                              </h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-extrabold text-[#0B4628] text-xs sm:text-sm lg:text-base">
+                                  {badge.title}
+                                </h4>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  Live Update
+                                </span>
+                              </div>
                               <p className="text-xs sm:text-sm text-gray-600 leading-snug">
                                 {badge.description}
                               </p>
-                              <p className="text-[10px] sm:text-xs text-emerald-800/70 pt-0.5 font-medium">
+                              <p className="text-[10px] sm:text-xs text-emerald-800/80 pt-0.5 font-medium">
                                 {formatCustomDate(ord.created_at)}
                               </p>
                             </div>
@@ -829,8 +834,23 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
 
                     {/* 5-Step Horizontal Progress Stepper */}
                     <div className="relative pt-2 pb-1">
-                      {/* Dotted connecting line behind the steps */}
-                      <div className="absolute left-[8%] right-[8%] top-6 sm:top-7 border-t-2 border-dotted border-gray-300 -z-0" />
+                      {/* Connecting Progress Track Line */}
+                      <div className="absolute left-[10%] right-[10%] top-4.5 sm:top-5.5 h-1 bg-gray-200 rounded-full -z-0 overflow-hidden">
+                        <div 
+                          className="h-full bg-[#0A5C36] transition-all duration-500 rounded-full"
+                          style={{
+                            width: selectedOrder.fulfilment_status === 'delivered'
+                              ? '100%'
+                              : selectedOrder.fulfilment_status === 'out_for_delivery'
+                              ? '75%'
+                              : selectedOrder.fulfilment_status === 'shipped'
+                              ? '50%'
+                              : selectedOrder.fulfilment_status === 'supplier_ordered' || selectedOrder.fulfilment_status === 'processing'
+                              ? '25%'
+                              : '0%'
+                          }}
+                        />
+                      </div>
 
                       <div className="flex items-start justify-between relative z-10">
                         {[
@@ -847,9 +867,9 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                               <div
                                 className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm mb-2 transition-all shadow-2xs ${
                                   status === 'completed'
-                                    ? 'bg-[#0A5C36] text-white ring-4 ring-emerald-50'
+                                    ? 'bg-[#0A5C36] text-white ring-4 ring-emerald-100 shadow-xs'
                                     : status === 'current'
-                                    ? 'bg-[#F59E0B] text-white ring-4 ring-amber-100 font-extrabold'
+                                    ? 'bg-[#F59E0B] text-white ring-4 ring-amber-100 font-black animate-pulse shadow-xs'
                                     : 'bg-[#F3F4F6] text-gray-400 border border-gray-200'
                                 }`}
                               >
@@ -861,14 +881,18 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                               </div>
 
                               {/* Label */}
-                              <span className={`text-[10px] sm:text-xs font-bold leading-tight ${
-                                status === 'upcoming' ? 'text-gray-400' : 'text-gray-900'
+                              <span className={`text-[10px] sm:text-xs leading-tight ${
+                                status === 'completed' 
+                                  ? 'font-black text-[#0B4628]' 
+                                  : status === 'current' 
+                                  ? 'font-black text-amber-800' 
+                                  : 'font-medium text-gray-400'
                               }`}>
                                 {label}
                               </span>
 
                               {time && step === 1 && (
-                                <span className="text-[8px] sm:text-[10px] text-gray-400 mt-1 block leading-tight">
+                                <span className="text-[8px] sm:text-[10px] text-emerald-800/80 font-medium mt-1 block leading-tight">
                                   {time}
                                 </span>
                               )}
@@ -912,7 +936,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                     </div>
 
                     {/* CURRENT STATUS UPDATE CARD: Crisp White in Green Theme */}
-                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-emerald-200/90 shadow-2xs flex items-start gap-4 ring-1 ring-emerald-500/10">
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 border-l-4 border-l-[#0A5C36] border border-emerald-200/90 shadow-2xs flex items-start gap-4 ring-1 ring-emerald-500/10">
                       <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-[#0A5C36] shrink-0 mt-0.5">
                         <Package className="w-5 h-5 text-[#0A5C36]" />
                       </div>
@@ -921,12 +945,20 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onNavigate, recentOrder 
                           Current Fulfillment Status
                         </span>
                         <h3 className="font-black text-[#0B4628] text-sm sm:text-base leading-snug">
-                          {selectedOrder.tracking_number 
+                          {selectedOrder.fulfilment_status === 'delivered'
+                            ? 'Delivered Successfully'
+                            : selectedOrder.fulfilment_status === 'cancelled'
+                            ? 'Order Cancelled'
+                            : selectedOrder.tracking_number 
                             ? `In Transit with ${selectedOrder.tracking_carrier || 'Delhivery Express'}` 
                             : 'Packaging & Courier Dispatch Underway'}
                         </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                          {selectedOrder.tracking_number ? (
+                        <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
+                          {selectedOrder.fulfilment_status === 'delivered' ? (
+                            'Package delivered safely to your doorstep. Thank you for shopping with The Kerala Store!'
+                          ) : selectedOrder.fulfilment_status === 'cancelled' ? (
+                            'This order has been cancelled. Any prepaid payments are refunded to the source account.'
+                          ) : selectedOrder.tracking_number ? (
                             <span>
                               Waybill / AWB Number: <strong className="font-mono text-gray-900">{selectedOrder.tracking_number}</strong>
                             </span>

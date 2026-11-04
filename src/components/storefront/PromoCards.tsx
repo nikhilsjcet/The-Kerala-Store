@@ -42,7 +42,13 @@ export const PromoCards: React.FC<PromoCardsProps> = ({ onSelectPromo }) => {
           </div>
 
           {/* Right Image: Seamless Blend Matching Reference with Zero Seams */}
-          <div className="absolute right-0 top-0 bottom-0 w-[58%] sm:w-[58%] lg:w-[54%] overflow-hidden flex items-center justify-end pointer-events-none">
+          <div 
+            className="absolute right-0 top-0 bottom-0 w-[58%] sm:w-[58%] lg:w-[54%] overflow-hidden flex items-center justify-end pointer-events-none"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)',
+              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)'
+            }}
+          >
             <img
               src="/mockup/banner-electronics-studio.jpg"
               alt="Electronics & Gadgets"
@@ -86,7 +92,13 @@ export const PromoCards: React.FC<PromoCardsProps> = ({ onSelectPromo }) => {
           </div>
 
           {/* Right Image: Seamless Blend Matching Reference with Zero Seams */}
-          <div className="absolute right-0 top-0 bottom-0 w-[58%] sm:w-[58%] lg:w-[54%] overflow-hidden flex items-center justify-end pointer-events-none">
+          <div 
+            className="absolute right-0 top-0 bottom-0 w-[58%] sm:w-[58%] lg:w-[54%] overflow-hidden flex items-center justify-end pointer-events-none"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)',
+              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)'
+            }}
+          >
             <img
               src="/mockup/banner-fashion-studio.jpg"
               alt="Fashion Collection"
@@ -130,7 +142,13 @@ export const PromoCards: React.FC<PromoCardsProps> = ({ onSelectPromo }) => {
           </div>
 
           {/* Right Image: Seamless Blend with Zero Seams */}
-          <div className="absolute right-0 top-0 bottom-0 w-[58%] sm:w-[58%] lg:w-[54%] overflow-hidden flex items-center justify-end pointer-events-none">
+          <div 
+            className="absolute right-0 top-0 bottom-0 w-[58%] sm:w-[58%] lg:w-[54%] overflow-hidden flex items-center justify-end pointer-events-none"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)',
+              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 55%)'
+            }}
+          >
             <img
               src="/mockup/banner-home-studio.jpg"
               alt="Home Essentials"

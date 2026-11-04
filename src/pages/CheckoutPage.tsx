@@ -157,7 +157,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
       }));
 
       // Helper to finalize order in Supabase / StoreService
-      const createFinalOrder = async (paidId?: string) => {
+      const createFinalOrder = async (paidId?: string, rzpOrderId?: string) => {
+        const isPaid = Boolean(paidId);
         const newOrder = await StoreService.createOrder({
           user_id: user?.id,
           customer_name: formData.fullName,
@@ -171,9 +172,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderS
           shipping_fee: verifiedShipping,
           total_amount: verifiedTotal,
           payment_method: paymentMethod,
-          payment_status: paymentMethod === 'cod' ? 'pending' : 'completed',
-          payment_id: paidId || (paymentMethod === 'cod' ? undefined : `rzp_sim_${Date.now()}`),
-          notes: `Order placed via TheKeralaStore storefront. State: ${formData.state}`,
+          payment_status: paymentMethod === 'cod' ? 'pending' : (isPaid ? 'completed' : 'failed'),
+          payment_id: paidId || undefined,
+          notes: paymentMethod === 'razorpay'
+            ? `Razorpay Order: ${rzpOrderId || 'Direct'} | Gateway Payment ID: ${paidId || 'Unpaid'} | State: ${formData.state}`
+            : `Cash on Delivery Order. State: ${formData.state}`,
         });
 
         clearCart();
