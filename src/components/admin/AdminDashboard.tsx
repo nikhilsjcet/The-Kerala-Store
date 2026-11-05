@@ -193,10 +193,36 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
 
   const isCod = order.payment_method === 'cod';
   const payId = order.payment_id || '';
-  const isLiveRazorpay = !isCod && payId.startsWith('pay_');
-  const isTestRazorpay = !isCod && payId.startsWith('rzp_test_');
-  const isSimulated = !isCod && (payId.startsWith('rzp_sim_') || payId.startsWith('sim_'));
-  const isMissingPayId = !isCod && !payId;
+
+  const [gatewayInspection, setGatewayInspection] = useState<{
+    status: 'idle' | 'checking' | 'verified' | 'not_found' | 'error';
+    data?: any;
+    errorMsg?: string;
+  }>({ status: 'idle' });
+
+  const verifyPaymentOnGateway = async () => {
+    if (!payId || isCod) return;
+    setGatewayInspection({ status: 'checking' });
+    try {
+      const res = await fetch(`/api/check-payment?payment_id=${encodeURIComponent(payId)}`);
+      const data = await res.json();
+      if (data.success && data.exists && data.payment) {
+        setGatewayInspection({ status: 'verified', data: data.payment });
+      } else if (data.success && !data.exists) {
+        setGatewayInspection({ status: 'not_found', errorMsg: data.error || 'Payment ID not found on Razorpay.' });
+      } else {
+        setGatewayInspection({ status: 'error', errorMsg: data.error || 'Verification check failed.' });
+      }
+    } catch (err: any) {
+      setGatewayInspection({ status: 'error', errorMsg: err.message || 'Could not connect to payment checker.' });
+    }
+  };
+
+  useEffect(() => {
+    if (isExpanded && payId && !isCod && gatewayInspection.status === 'idle') {
+      verifyPaymentOnGateway();
+    }
+  }, [isExpanded, payId, isCod]);
 
   const handleCopyPaymentId = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -216,13 +242,23 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
           <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
             isCod 
               ? 'bg-amber-300 text-amber-950 border-amber-300' 
-              : isLiveRazorpay
+              : gatewayInspection.status === 'verified' && !gatewayInspection.data?.is_test_mode
               ? 'bg-emerald-300 text-emerald-950 border-emerald-300'
-              : isTestRazorpay
+              : gatewayInspection.status === 'verified' && gatewayInspection.data?.is_test_mode
               ? 'bg-yellow-300 text-yellow-950 border-yellow-300'
-              : 'bg-rose-200 text-rose-950 border-rose-300'
+              : gatewayInspection.status === 'not_found'
+              ? 'bg-rose-300 text-rose-950 border-rose-300'
+              : 'bg-white text-[#0A5C36] border-white'
           }`}>
-            {isCod ? '💵 COD' : isLiveRazorpay ? '🟢 RAZORPAY LIVE' : isTestRazorpay ? '🟡 RZP TEST' : '🔴 UNVERIFIED'}
+            {isCod 
+              ? '💵 COD' 
+              : gatewayInspection.status === 'verified' && !gatewayInspection.data?.is_test_mode
+              ? '🟢 RZP LIVE VERIFIED' 
+              : gatewayInspection.status === 'verified' && gatewayInspection.data?.is_test_mode
+              ? '🟡 RZP TEST MODE' 
+              : gatewayInspection.status === 'not_found'
+              ? '🔴 NOT IN RAZORPAY'
+              : '💳 RAZORPAY'}
           </span>
 
           {/* Quick Delivery Status Dropdown for Admin */}
@@ -328,37 +364,56 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
               <span>💵 Cash on Delivery</span>
               <span className="text-gray-500 font-normal">• Collect {formatINR(order.total_amount)} at doorstep</span>
             </span>
-          ) : isLiveRazorpay ? (
+          ) : gatewayInspection.status === 'verified' && !gatewayInspection.data?.is_test_mode ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-900 border border-emerald-200 font-semibold text-[11px]">
               <ShieldCheck className="w-3 h-3 text-emerald-600" />
-              <span>Razorpay Verified</span>
+              <span>Razorpay Live Verified</span>
               <span className="font-mono text-emerald-700 font-bold">({payId})</span>
             </span>
-          ) : isTestRazorpay ? (
+          ) : gatewayInspection.status === 'verified' && gatewayInspection.data?.is_test_mode ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-50 text-yellow-900 border border-yellow-200 font-semibold text-[11px]">
               <span>⚠️ Test Mode Payment</span>
-              <span className="font-mono text-yellow-700">({payId})</span>
+              <span className="font-mono text-yellow-700 font-bold">({payId})</span>
+              <span className="text-amber-800 text-[10px] font-medium">• No real money (View in Test Mode)</span>
+            </span>
+          ) : gatewayInspection.status === 'not_found' ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-900 border border-rose-300 font-bold text-[11px]">
+              <span>🔴 Not Found in Razorpay!</span>
+              <span className="font-mono text-rose-700">({payId})</span>
+              <span className="text-rose-600 text-[10px] font-normal">• No money received</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-900 border border-rose-200 font-semibold text-[11px]">
-              <span>❌ Simulated / Not Captured</span>
-              {payId && <span className="font-mono text-rose-700">({payId})</span>}
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-900 border border-blue-200 font-semibold text-[11px]">
+              <span>Razorpay Online</span>
+              {payId && <span className="font-mono text-blue-700">({payId})</span>}
             </span>
           )}
         </div>
 
-        {/* Quick Razorpay Link if Razorpay order */}
+        {/* Quick Razorpay Link & Verify button */}
         {!isCod && payId && (
-          <a
-            href={`https://dashboard.razorpay.com/app/payments/${payId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1"
-            title="Inspect payment on official Razorpay Dashboard"
-          >
-            <span>Verify on Razorpay</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={verifyPaymentOnGateway}
+              disabled={gatewayInspection.status === 'checking'}
+              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
+              title="Query Razorpay API to check if money was actually captured"
+            >
+              <RefreshCw className={`w-3 h-3 ${gatewayInspection.status === 'checking' ? 'animate-spin' : ''}`} />
+              <span>{gatewayInspection.status === 'checking' ? 'Checking...' : gatewayInspection.status === 'idle' ? 'Verify Live Status' : 'Re-verify'}</span>
+            </button>
+
+            <a
+              href={`https://dashboard.razorpay.com/app/payments/${payId}${gatewayInspection.data?.is_test_mode ? '?mode=test' : ''}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:underline inline-flex items-center gap-1"
+              title="Open Razorpay Dashboard"
+            >
+              <span>Razorpay Dashboard ↗</span>
+            </a>
+          </div>
         )}
       </div>
 
@@ -512,22 +567,109 @@ const AdminOrderCard: React.FC<AdminOrderCardProps> = ({ order, onUpdate, onCopy
                     <span className="text-[10px] text-amber-700 font-semibold">
                       Full amount {formatINR(order.total_amount)} to be received upon delivery.
                     </span>
-                  ) : isLiveRazorpay ? (
+                  ) : gatewayInspection.status === 'verified' && !gatewayInspection.data?.is_test_mode ? (
                     <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" /> Real funds captured via Razorpay Gateway.
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Real funds captured on Razorpay Live Mode.</span>
                     </span>
-                  ) : isTestRazorpay ? (
-                    <span className="text-[10px] text-yellow-700 font-semibold">
-                      ⚠️ Test Mode / Sandbox Payment. No real bank transfer.
+                  ) : gatewayInspection.status === 'verified' && gatewayInspection.data?.is_test_mode ? (
+                    <span className="text-[10px] text-yellow-800 font-semibold">
+                      ⚠️ Sandbox Test Mode: No real funds moved. (Toggle Razorpay Dashboard to Test Mode to view)
+                    </span>
+                  ) : gatewayInspection.status === 'not_found' ? (
+                    <span className="text-[10px] text-rose-700 font-bold">
+                      🔴 NOT FOUND ON RAZORPAY: This ID was never processed or captured. DO NOT SHIP!
                     </span>
                   ) : (
-                    <span className="text-[10px] text-rose-700 font-semibold">
-                      🔴 Simulated or unverified payment. Verify before shipping!
+                    <span className="text-[10px] text-blue-700 font-medium">
+                      Click "Verify on Gateway" to check official status with Razorpay.
                     </span>
                   )}
                 </div>
               </div>
             </div>
+
+            {/* Gateway Live Status Callout Banner */}
+            {!isCod && payId && (
+              <div className="pt-1">
+                {gatewayInspection.status === 'verified' && gatewayInspection.data?.is_test_mode ? (
+                  <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-amber-900 flex items-center gap-1.5">
+                        <span>⚠️ Verified Test Transaction</span>
+                      </span>
+                      <a
+                        href={`https://dashboard.razorpay.com/app/payments/${payId}?mode=test`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1"
+                      >
+                        <span>Open in Razorpay (Test Mode)</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <p className="text-[11px] text-amber-800">
+                      Payment ID <strong className="font-mono">{payId}</strong> exists in your Razorpay account under <strong>Test Mode</strong> (captured via {gatewayInspection.data.method?.toUpperCase()} for {formatINR(gatewayInspection.data.amount)}).
+                      <br />
+                      <strong>Why it's not listed on Razorpay official site by default:</strong> The official Razorpay dashboard defaults to <strong>Live Mode</strong>. Toggle the switch at the top-left of dashboard.razorpay.com from <em>Live</em> to <em>Test</em> to view this transaction!
+                    </p>
+                  </div>
+                ) : gatewayInspection.status === 'verified' && !gatewayInspection.data?.is_test_mode ? (
+                  <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-emerald-900 flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        <span>✅ Live Gateway Confirmed &amp; Captured</span>
+                      </span>
+                      <a
+                        href={`https://dashboard.razorpay.com/app/payments/${payId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1"
+                      >
+                        <span>Open in Razorpay Dashboard</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <p className="text-[11px] text-emerald-800">
+                      Real customer funds of <strong>{formatINR(gatewayInspection.data.amount)}</strong> successfully captured on Razorpay. Method: <strong>{gatewayInspection.data.method?.toUpperCase()}</strong>.
+                    </p>
+                  </div>
+                ) : gatewayInspection.status === 'not_found' ? (
+                  <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-rose-900 flex items-center gap-1.5">
+                        <span>🔴 Transaction NOT Found in Your Razorpay Account</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={verifyPaymentOnGateway}
+                        className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Re-check</span>
+                        <RefreshCw className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-rose-800">
+                      Razorpay API returned <em>"The id provided does not exist"</em> for <strong>{payId}</strong>. This was a simulated test order created before real credentials were linked. <strong>No money was paid</strong>. Do not ship products for this order without collecting payment.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-center justify-between text-xs">
+                    <span className="text-gray-700">Check official payment status directly from Razorpay's servers.</span>
+                    <button
+                      type="button"
+                      onClick={verifyPaymentOnGateway}
+                      disabled={gatewayInspection.status === 'checking'}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${gatewayInspection.status === 'checking' ? 'animate-spin' : ''}`} />
+                      <span>{gatewayInspection.status === 'checking' ? 'Checking Gateway...' : 'Verify on Gateway'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {order.notes && (
               <div className="text-[11px] bg-white p-2.5 rounded-xl border border-gray-200 text-gray-600">
@@ -802,6 +944,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [razorpayKeyId, setRazorpayKeyId] = useState(() => localStorage.getItem('tks_razorpay_key_id') || import.meta.env.VITE_RAZORPAY_KEY_ID || '');
   const [razorpaySecret, setRazorpaySecret] = useState(() => localStorage.getItem('tks_razorpay_key_secret') || '');
   const [savedRzp, setSavedRzp] = useState(false);
+  const [testingRzp, setTestingRzp] = useState(false);
+  const [rzpTestResult, setRzpTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleTestRazorpayConnection = async () => {
+    setTestingRzp(true);
+    setRzpTestResult(null);
+    try {
+      const res = await fetch(`/api/check-payment?key_id=${encodeURIComponent(razorpayKeyId.trim())}&key_secret=${encodeURIComponent(razorpaySecret.trim())}`);
+      const data = await res.json();
+      if (data.success && data.connection_valid) {
+        setRzpTestResult({
+          success: true,
+          message: `Connected successfully! Active mode: ${data.mode?.toUpperCase()} (${data.total_payments_found} payment(s) found on Razorpay)`,
+        });
+      } else {
+        setRzpTestResult({
+          success: false,
+          message: data.error || 'Authentication failed. Please check your Key ID and Key Secret.',
+        });
+      }
+    } catch (err: any) {
+      setRzpTestResult({
+        success: false,
+        message: err.message || 'Could not connect to payment checker server.',
+      });
+    } finally {
+      setTestingRzp(false);
+    }
+  };
 
   // Derive unique customers from registered members + real store orders
   const customers = React.useMemo(() => {
@@ -2702,7 +2873,25 @@ Pincode: ${cust.address.pincode}`;
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                {rzpTestResult && (
+                  <div className={`p-3 rounded-xl text-xs font-semibold ${
+                    rzpTestResult.success ? 'bg-emerald-50 text-emerald-900 border border-emerald-300' : 'bg-rose-50 text-rose-900 border border-rose-300'
+                  }`}>
+                    {rzpTestResult.message}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleTestRazorpayConnection}
+                    disabled={testingRzp || !razorpayKeyId.trim() || !razorpaySecret.trim()}
+                    className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${testingRzp ? 'animate-spin' : ''}`} />
+                    <span>{testingRzp ? 'Testing Connection...' : 'Test Razorpay Connection'}</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {

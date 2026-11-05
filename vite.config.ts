@@ -227,7 +227,7 @@ function razorpayDevPlugin(): Plugin {
     name: 'razorpay-dev-plugin',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if (req.url && (req.url.startsWith('/api/create-order') || req.url.startsWith('/api/verify-payment'))) {
+        if (req.url && (req.url.startsWith('/api/create-order') || req.url.startsWith('/api/verify-payment') || req.url.startsWith('/api/check-payment'))) {
           let bodyStr = '';
           req.on('data', (chunk) => {
             bodyStr += chunk;
@@ -252,6 +252,7 @@ function razorpayDevPlugin(): Plugin {
               };
 
               const mockReq = {
+                url: req.url,
                 method: req.method,
                 body: parsedBody,
               };
@@ -262,6 +263,10 @@ function razorpayDevPlugin(): Plugin {
                 return;
               } else if (req.url?.startsWith('/api/verify-payment')) {
                 const { default: handler } = await import('./api/verify-payment.js');
+                await handler(mockReq, mockRes);
+                return;
+              } else if (req.url?.startsWith('/api/check-payment')) {
+                const { default: handler } = await import('./api/check-payment.js');
                 await handler(mockReq, mockRes);
                 return;
               }

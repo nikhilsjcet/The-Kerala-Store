@@ -9,6 +9,10 @@
       "destination": "/api/verify-payment.js"
     },
     {
+      "source": "/api/check-payment",
+      "destination": "/api/check-payment.js"
+    },
+    {
       "source": "/api/extract-meesho",
       "destination": "/api/extract-meesho.js"
     },
